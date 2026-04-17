@@ -60,7 +60,7 @@ export function Globe({ className = "" }: GlobeProps) {
     });
 
     const animate = () => {
-      phi += 0.005;
+      phi += 0.05;
       globe.update({ phi });
       frameId = requestAnimationFrame(animate);
     };
