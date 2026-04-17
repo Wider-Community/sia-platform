@@ -1,0 +1,13 @@
+export { HeroSection } from './HeroSection';
+export { PartnerLogos } from './PartnerLogos';
+export { AnnouncementsSection } from './AnnouncementsSection';
+export { StatsSection } from './StatsSection';
+export { TechnologySection } from './TechnologySection';
+export { GlobalMarketsSection } from './GlobalMarketsSection';
+export { PerspectivesSection } from './PerspectivesSection';
+export { SIAChainSection } from './OndoChainSection';
+export { InstitutionalSection } from './InstitutionalSection';
+export { EcosystemSection } from './EcosystemSection';
+export { ResourcesSection } from './ResourcesSection';
+export { NewsletterSection } from './NewsletterSection';
+export { Footer } from './Footer';
