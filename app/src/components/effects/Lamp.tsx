@@ -57,8 +57,8 @@ export function Lamp({ children, className }: LampProps) {
           className="absolute bottom-0 h-px bg-gold z-10"
         />
 
-        {/* Glow blob */}
-        <div className="absolute bottom-0 w-[20rem] h-24 rounded-full bg-gold/20 opacity-50 blur-3xl z-0" />
+        {/* Glow — gradient instead of blur for performance */}
+        <div className="absolute bottom-0 w-[24rem] h-16 bg-gradient-to-t from-gold/15 to-transparent rounded-full z-0" />
       </div>
 
       {/* Content — normal flow, no translate */}

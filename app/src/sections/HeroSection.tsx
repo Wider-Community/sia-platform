@@ -49,8 +49,8 @@ export function HeroSection() {
       {/* Gradient Overlay — dark charcoal/gold tint */}
       <div className="absolute inset-0 bg-gradient-to-br from-charcoal/80 via-navy/70 to-charcoal/60" />
 
-      {/* Subtle gold accent glow */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-gold/[0.06] rounded-full blur-[100px] pointer-events-none" />
+      {/* Subtle gold accent — gradient instead of blur for performance */}
+      <div className="absolute bottom-0 left-0 right-0 h-[200px] bg-gradient-to-t from-gold/[0.04] to-transparent pointer-events-none" />
 
       {/* Content */}
       <div className="relative z-10 flex-grow flex items-center">
