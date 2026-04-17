@@ -32,15 +32,18 @@ export function Globe({ className = "" }: GlobeProps) {
   useEffect(() => {
     if (!canvasRef.current || canvasSize === 0) return;
 
-    let phi = 0.4;
+    // Start facing the Middle East / Southeast Asia region
+    // phi = longitude rotation (radians), theta = latitude tilt
+    // KSA ~47°E, Malaysia ~102°E → center around ~75°E → phi ≈ 1.3 rad
+    let phi = 1.3;
     let frameId: number;
 
     const globe = createGlobe(canvasRef.current, {
       devicePixelRatio: 1,
       width: canvasSize * 2,
       height: canvasSize * 2,
-      phi: 0.4,
-      theta: 0.25,
+      phi: 1.3,
+      theta: 0.15,
       dark: 0,
       diffuse: 3,
       mapSamples: 16000,
