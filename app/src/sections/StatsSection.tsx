@@ -1,7 +1,6 @@
 // Inspired by 21st.dev: reuno-ui/animated-number
 // Animated statistics with spring-physics counters
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { motion } from "framer-motion";
 import { AnimatedCounter } from "@/components/effects/AnimatedCounter";
 import { useTranslation } from "react-i18next";
 
@@ -13,12 +12,10 @@ const stats = [
 ];
 
 export function StatsSection() {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
   const { t } = useTranslation();
 
   return (
-    <section className="relative bg-navy py-24" ref={ref}>
+    <section className="relative bg-navy py-24">
       {/* Gold accent line */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-px bg-gradient-to-r from-transparent via-gold to-transparent" />
 
@@ -28,7 +25,8 @@ export function StatsSection() {
             <motion.div
               key={stat.labelKey}
               initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
               transition={{ delay: i * 0.1, duration: 0.6 }}
               className="text-center"
             >

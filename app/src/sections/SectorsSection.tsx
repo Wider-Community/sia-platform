@@ -1,7 +1,6 @@
 // Inspired by 21st.dev: aceternity/3d-card-effect + bento grid
 // Sector cards with 3D hover effects
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { motion } from "framer-motion";
 import {
   Utensils,
   HeartPulse,
@@ -27,12 +26,10 @@ const sectors = [
 ];
 
 export function SectorsSection() {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
   const { t } = useTranslation();
 
   return (
-    <section id="sectors" className="relative bg-navy py-24 lg:py-32" ref={ref}>
+    <section id="sectors" className="relative bg-navy py-24 lg:py-32">
       <div className="max-w-6xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-16">
@@ -53,7 +50,8 @@ export function SectorsSection() {
             <motion.div
               key={sector.nameKey}
               initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
               transition={{ delay: i * 0.08, duration: 0.5 }}
             >
               <ThreeDCard>

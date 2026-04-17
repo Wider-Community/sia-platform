@@ -1,7 +1,6 @@
 // Inspired by 21st.dev: sean0205/3d-testimonials + Efferd/testimonials-columns
 // Testimonial cards with marquee scrolling — fully localized
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Marquee } from "@/components/effects/Marquee";
 import { Quote } from "lucide-react";
@@ -40,16 +39,15 @@ function TestimonialCard({ quoteKey, nameKey, roleKey }: { quoteKey: string; nam
 }
 
 export function TestimonialsSection() {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
   const { t } = useTranslation();
 
   return (
-    <section className="relative bg-navy py-24 overflow-hidden" ref={ref}>
+    <section className="relative bg-navy py-24 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 mb-12">
         <motion.div
           initial={{ opacity: 0 }}
-          animate={isInView ? { opacity: 1 } : {}}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, margin: "-100px" }}
           className="text-center"
         >
           <p className="text-gold text-sm font-semibold uppercase tracking-widest mb-4 font-sans">

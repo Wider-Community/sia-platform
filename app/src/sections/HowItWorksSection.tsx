@@ -1,7 +1,6 @@
 // Inspired by 21st.dev: anubra266/timeline-animation
 // Scroll-triggered deal lifecycle with animated connecting lines
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { motion } from "framer-motion";
 import { Search, FileCheck, Puzzle, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -13,12 +12,10 @@ const steps = [
 ];
 
 export function HowItWorksSection() {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
   const { t } = useTranslation();
 
   return (
-    <section id="platform" className="relative bg-[#151516] py-24 lg:py-32" ref={ref}>
+    <section id="platform" className="relative bg-[#151516] py-24 lg:py-32">
       {/* Subtle grid */}
       <div className="absolute inset-0 spotlight-grid opacity-50" />
 
@@ -48,7 +45,8 @@ export function HowItWorksSection() {
               <motion.div
                 key={step.step}
                 initial={{ opacity: 0, x: -20 }}
-                animate={isInView ? { opacity: 1, x: 0 } : {}}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
                 transition={{ delay: i * 0.2, duration: 0.6 }}
                 className="flex gap-4 md:gap-8 items-start"
               >
@@ -56,7 +54,8 @@ export function HowItWorksSection() {
                 <div className="relative flex-shrink-0">
                   <motion.div
                     initial={{ scale: 0 }}
-                    animate={isInView ? { scale: 1 } : {}}
+                    whileInView={{ scale: 1 }}
+                    viewport={{ once: true, margin: "-100px" }}
                     transition={{ delay: i * 0.2 + 0.3, type: "spring" }}
                     className="w-14 h-14 md:w-20 md:h-20 rounded-xl md:rounded-2xl bg-gold/10 border border-gold/20 flex items-center justify-center relative z-10"
                   >

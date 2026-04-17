@@ -1,7 +1,6 @@
 // Inspired by 21st.dev: aceternity/3d-card-effect + easemize/spotlight-card
 // 3D perspective cards with spotlight tracking for value propositions
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { motion } from "framer-motion";
 import { Handshake, Shield, Brain } from "lucide-react";
 import { SpotlightCard } from "@/components/effects/SpotlightCard";
 import { ThreeDCard, ThreeDCardBody, ThreeDCardItem } from "@/components/effects/ThreeDCard";
@@ -36,18 +35,17 @@ const cards = [
 ];
 
 export function ValuePropsSection() {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
   const { t } = useTranslation();
 
   return (
-    <section id="services" className="relative bg-navy py-24 lg:py-32" ref={ref}>
+    <section id="services" className="relative bg-navy py-24 lg:py-32">
       <div className="max-w-7xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-16 max-w-2xl mx-auto">
           <motion.p
             initial={{ opacity: 0 }}
-            animate={isInView ? { opacity: 1 } : {}}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, margin: "-100px" }}
             className="text-gold text-sm font-semibold uppercase tracking-widest mb-4 font-sans"
           >
             {t("valueProps.label")}
@@ -66,7 +64,8 @@ export function ValuePropsSection() {
             <motion.div
               key={card.titleKey}
               initial={{ opacity: 0, y: 30 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
               transition={{ delay: i * 0.15, duration: 0.6 }}
             >
               <ThreeDCard>

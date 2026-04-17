@@ -1,6 +1,5 @@
 // Corridor section — KSA-Malaysia connection with 2D map and flags
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { ArrowRight } from "lucide-react";
 
@@ -71,9 +70,6 @@ function MalaysiaFlag({ x, y, size = 36 }: { x: number; y: number; size?: number
 
 export function GlobeSection() {
   const { t } = useTranslation();
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-50px" });
-
   const facts = [
     { label: t("globe.fact1"), detail: t("globe.fact1detail") },
     { label: t("globe.fact2"), detail: t("globe.fact2detail") },
@@ -83,7 +79,6 @@ export function GlobeSection() {
 
   return (
     <section
-      ref={ref}
       className="relative bg-[#151516] py-20 lg:py-28 overflow-hidden"
     >
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
@@ -93,7 +88,8 @@ export function GlobeSection() {
           {/* Left: Map Visual */}
           <motion.div
             initial={{ opacity: 0 }}
-            animate={isInView ? { opacity: 1 } : {}}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, margin: "-50px" }}
             transition={{ duration: 0.6 }}
             className="order-2 lg:order-1"
           >
@@ -132,7 +128,8 @@ export function GlobeSection() {
                   strokeDasharray="6 4"
                   fill="none"
                   initial={{ pathLength: 0 }}
-                  animate={isInView ? { pathLength: 1 } : {}}
+                  whileInView={{ pathLength: 1 }}
+                  viewport={{ once: true, margin: "-50px" }}
                   transition={{ duration: 1.5, delay: 0.3, ease: "easeInOut" }}
                 />
                 <motion.path
@@ -143,14 +140,16 @@ export function GlobeSection() {
                   strokeOpacity="0.06"
                   fill="none"
                   initial={{ pathLength: 0 }}
-                  animate={isInView ? { pathLength: 1 } : {}}
+                  whileInView={{ pathLength: 1 }}
+                  viewport={{ once: true, margin: "-50px" }}
                   transition={{ duration: 1.5, delay: 0.3, ease: "easeInOut" }}
                 />
 
                 {/* KSA — flag + marker */}
                 <SaudiFlag x={90} y={100} size={28} />
                 <motion.circle cx="90" cy="120" r="5" fill="#C8A951" opacity="0.15"
-                  animate={isInView ? { r: [5, 12, 5], opacity: [0.15, 0, 0.15] } : {}}
+                  whileInView={{ r: [5, 12, 5], opacity: [0.15, 0, 0.15] }}
+                  viewport={{ once: true, margin: "-50px" }}
                   transition={{ duration: 2.5, repeat: Infinity }}
                 />
                 <circle cx="90" cy="120" r="4" fill="#C8A951" />
@@ -165,7 +164,8 @@ export function GlobeSection() {
                 {/* Malaysia — flag + marker */}
                 <MalaysiaFlag x={320} y={120} size={28} />
                 <motion.circle cx="320" cy="140" r="5" fill="#C8A951" opacity="0.15"
-                  animate={isInView ? { r: [5, 12, 5], opacity: [0.15, 0, 0.15] } : {}}
+                  whileInView={{ r: [5, 12, 5], opacity: [0.15, 0, 0.15] }}
+                  viewport={{ once: true, margin: "-50px" }}
                   transition={{ duration: 2.5, repeat: Infinity, delay: 0.8 }}
                 />
                 <circle cx="320" cy="140" r="4" fill="#C8A951" />
@@ -186,7 +186,8 @@ export function GlobeSection() {
           {/* Right: Content */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
             transition={{ duration: 0.6, delay: 0.2 }}
             className="space-y-6 order-1 lg:order-2"
           >
