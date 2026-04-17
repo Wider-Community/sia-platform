@@ -38,18 +38,18 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
+        // SIA brand colors
+        gold: {
+          DEFAULT: "rgb(200 169 81 / <alpha-value>)",
+          dark: "rgb(160 136 56 / <alpha-value>)",
+          light: "rgb(232 212 139 / <alpha-value>)",
         },
-        'bg-alt': '#f8f9fa',
-        'card-border': '#e5e7eb',
+        charcoal: "rgb(28 28 30 / <alpha-value>)",
+        silver: {
+          DEFAULT: "rgb(192 192 192 / <alpha-value>)",
+          light: "rgb(232 232 232 / <alpha-value>)",
+        },
+        navy: "rgb(10 22 40 / <alpha-value>)",
       },
       borderRadius: {
         xl: "calc(var(--radius) + 4px)",
@@ -64,14 +64,17 @@ module.exports = {
         xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
         'card': '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)',
         'card-hover': '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)',
+        'gold-glow': '0 0 40px rgba(200, 169, 81, 0.15)',
+        'gold-glow-lg': '0 0 80px rgba(200, 169, 81, 0.2)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        serif: ['Playfair Display', 'Georgia', 'serif'],
       },
       fontSize: {
-        'hero': ['64px', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
-        'section': ['48px', { lineHeight: '1.2', letterSpacing: '-0.01em' }],
-        'stat': ['48px', { lineHeight: '1.2', letterSpacing: '-0.02em' }],
+        'hero': ['clamp(2.5rem, 5vw, 4rem)', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
+        'section': ['clamp(2rem, 4vw, 3rem)', { lineHeight: '1.2', letterSpacing: '-0.01em' }],
+        'stat': ['clamp(2.5rem, 4vw, 3.5rem)', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
       },
       keyframes: {
         "accordion-down": {
@@ -88,10 +91,10 @@ module.exports = {
         },
         "marquee": {
           "0%": { transform: "translateX(0%)" },
-          "100%": { transform: "translateX(-50%)" },
+          "100%": { transform: "translateX(-100%)" },
         },
         "marquee-reverse": {
-          "0%": { transform: "translateX(-50%)" },
+          "0%": { transform: "translateX(-100%)" },
           "100%": { transform: "translateX(0%)" },
         },
         "fade-in": {
@@ -106,6 +109,10 @@ module.exports = {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.7" },
         },
+        "shimmer": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -116,6 +123,7 @@ module.exports = {
         "fade-in": "fade-in 0.5s ease-out forwards",
         "slide-up": "slide-up 0.5s ease-out forwards",
         "pulse-slow": "pulse-slow 3s ease-in-out infinite",
+        "shimmer": "shimmer 8s ease-in-out infinite",
       },
     },
   },

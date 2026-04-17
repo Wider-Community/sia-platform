@@ -1,194 +1,184 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Menu, X, ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-
-const navLinks = [
-  {
-    label: 'Products',
-    href: '#',
-    items: [
-      { label: 'USDY', href: '#' },
-      { label: 'OUSG', href: '#' },
-      { label: 'Global Markets', href: '#' },
-    ],
-  },
-  {
-    label: 'Resources',
-    href: '#',
-    items: [
-      { label: 'Insights', href: '#' },
-      { label: 'Docs', href: '#' },
-      { label: 'Trust & Security', href: '#' },
-    ],
-  },
-  { label: 'Ecosystem', href: '#' },
-  { label: 'About', href: '#' },
-];
+// Full-width sticky navbar with centered content
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Menu, X, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 export function Navbar() {
+  const { t, i18n } = useTranslation();
   const [scrolled, setScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+
+  const navLinks = [
+    { label: t("nav.about"), href: "#about" },
+    {
+      label: t("nav.services"),
+      href: "#services",
+      children: [
+        { label: t("nav.dealFacilitation"), href: "#services" },
+        { label: t("nav.marketEntry"), href: "#services" },
+        { label: t("nav.regulatoryNav"), href: "#services" },
+      ],
+    },
+    { label: t("nav.platform"), href: "#platform" },
+    { label: t("nav.sectors"), href: "#sectors" },
+    { label: t("nav.insights"), href: "#insights" },
+  ];
+
+  const toggleLanguage = () => {
+    i18n.changeLanguage(i18n.language === "en" ? "ar" : "en");
+  };
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
-    <motion.header
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-      className={`fixed top-10 left-0 right-0 z-40 transition-all duration-300 ${
-        scrolled
-          ? 'bg-background/95 backdrop-blur-md shadow-sm'
-          : 'bg-transparent'
-      }`}
-    >
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <>
+      <header
+        className={cn(
+          "fixed top-0 inset-x-0 z-50 w-full transition-all duration-300",
+          scrolled
+            ? "bg-charcoal/90 backdrop-blur-xl border-b border-white/[0.06] shadow-lg"
+            : "bg-transparent"
+        )}
+      >
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 lg:px-8 py-4">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-2 group">
-            <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors ${
-              scrolled ? 'border-[#1a1a1a]' : 'border-white'
-            }`}>
-              <svg
-                viewBox="0 0 24 24"
-                className={`w-5 h-5 transition-colors ${
-                  scrolled ? 'text-[#1a1a1a]' : 'text-white'
-                }`}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10" />
-              </svg>
-            </div>
-            <span className={`text-xl font-medium transition-colors ${
-              scrolled ? 'text-[#1a1a1a]' : 'text-white'
-            }`}>
-              SIA
-            </span>
+          <a href="#" className="flex items-center gap-3 shrink-0">
+            <img
+              src="/images/sia-logo.png"
+              alt="SIA"
+              className="h-8 w-auto"
+            />
           </a>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
+          {/* Desktop Nav — centered */}
+          <nav className="hidden lg:flex items-center gap-1">
             {navLinks.map((link) => (
-              link.items ? (
-                <DropdownMenu key={link.label}>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      className={`flex items-center gap-1 text-sm font-medium transition-colors hover:opacity-70 ${
-                        scrolled ? 'text-[#1a1a1a]' : 'text-white'
-                      }`}
-                    >
-                      {link.label}
-                      <ChevronDown className="w-4 h-4" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-48 bg-background border border-border shadow-lg rounded-xl">
-                    {link.items.map((item) => (
-                      <DropdownMenuItem key={item.label} asChild>
-                        <a href={item.href} className="w-full text-foreground hover:bg-muted cursor-pointer">
-                          {item.label}
-                        </a>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
+              <div
+                key={link.label}
+                className="relative"
+                onMouseEnter={() =>
+                  link.children && setActiveDropdown(link.label)
+                }
+                onMouseLeave={() => setActiveDropdown(null)}
+              >
                 <a
-                  key={link.label}
                   href={link.href}
-                  className={`text-sm font-medium transition-colors hover:opacity-70 ${
-                    scrolled ? 'text-[#1a1a1a]' : 'text-white'
-                  }`}
+                  className="px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/5"
                 >
                   {link.label}
+                  {link.children && (
+                    <ChevronDown className="w-3 h-3 rtl:rotate-0" />
+                  )}
                 </a>
-              )
-            ))}
-          </div>
 
-          {/* CTA Button */}
-          <div className="hidden md:block">
-            <Button
-              asChild
-              className="bg-white text-[#1a1a1a] hover:bg-white/90 rounded-full px-5 py-2 text-sm font-medium transition-all hover:scale-[1.02] shadow-sm"
-            >
-              <a href="#">
-                Launch Global Markets
-              </a>
-            </Button>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className={`md:hidden p-2 transition-colors ${
-              scrolled ? 'text-[#1a1a1a]' : 'text-white'
-            }`}
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-        </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-background rounded-2xl mt-2 p-4 shadow-lg border border-border"
-          >
-            <div className="flex flex-col gap-4">
-              {navLinks.map((link) => (
-                <div key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-foreground font-medium py-2 block"
-                  >
-                    {link.label}
-                  </a>
-                  {link.items && (
-                    <div className="pl-4 flex flex-col gap-2">
-                      {link.items.map((item) => (
+                <AnimatePresence>
+                  {link.children && activeDropdown === link.label && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute top-full start-0 mt-2 w-56 rounded-xl bg-charcoal/95 backdrop-blur-xl border border-white/[0.08] p-2 shadow-xl"
+                    >
+                      {link.children.map((child) => (
                         <a
-                          key={item.label}
-                          href={item.href}
-                          className="text-muted-foreground text-sm py-1"
+                          key={child.label}
+                          href={child.href}
+                          className="block px-4 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors text-start"
                         >
-                          {item.label}
+                          {child.label}
                         </a>
                       ))}
-                    </div>
+                    </motion.div>
                   )}
-                </div>
+                </AnimatePresence>
+              </div>
+            ))}
+          </nav>
+
+          {/* Right side — CTA + Language */}
+          <div className="hidden lg:flex items-center gap-3 shrink-0">
+            <button
+              onClick={toggleLanguage}
+              className="px-3 py-1.5 text-xs font-medium text-white/50 hover:text-white transition-colors border border-white/10 rounded-lg"
+            >
+              {t("nav.langToggle")}
+            </button>
+            <a
+              href="#contact"
+              className="px-5 py-2 text-sm font-semibold bg-gold text-charcoal rounded-lg hover:bg-gold-light transition-all hover:shadow-gold-glow"
+            >
+              {t("nav.schedule")}
+            </a>
+          </div>
+
+          {/* Mobile Toggle */}
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="lg:hidden p-2 text-white/70 hover:text-white"
+          >
+            {mobileOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
+          </button>
+        </div>
+      </header>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-charcoal/98 backdrop-blur-xl"
+          >
+            <nav className="flex flex-col items-center justify-center h-full gap-6">
+              {navLinks.map((link, i) => (
+                <motion.a
+                  key={link.label}
+                  href={link.href}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  onClick={() => setMobileOpen(false)}
+                  className="text-2xl font-serif text-white/80 hover:text-gold transition-colors"
+                >
+                  {link.label}
+                </motion.a>
               ))}
-              <Button
-                asChild
-                className="bg-[#1a1a1a] text-white rounded-full mt-2"
+              <motion.button
+                onClick={toggleLanguage}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45 }}
+                className="text-lg font-medium text-white/50 hover:text-white transition-colors border border-white/10 rounded-lg px-4 py-2"
               >
-                <a href="#">
-                  Launch Global Markets
-                </a>
-              </Button>
-            </div>
+                {t("nav.langToggle")}
+              </motion.button>
+              <motion.a
+                href="#contact"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                onClick={() => setMobileOpen(false)}
+                className="mt-4 px-8 py-3 bg-gold text-charcoal rounded-lg font-semibold"
+              >
+                {t("nav.schedule")}
+              </motion.a>
+            </nav>
           </motion.div>
         )}
-      </nav>
-    </motion.header>
+      </AnimatePresence>
+    </>
   );
 }
