@@ -23,12 +23,12 @@ function getInitialTheme(): Theme {
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
-      return parsed.state?.theme || 'light';
+      return parsed.state?.theme || 'dark';
     } catch {
-      return 'light';
+      return 'dark';
     }
   }
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 }
 
 const initial = getInitialTheme();

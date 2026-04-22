@@ -6,65 +6,7 @@
 
 @layer base {
   :root {
-    /* Layout */
-    --bg: #f8f9fb;
-    --surface: #ffffff;
-    --surface-hover: #f3f4f6;
-
-    /* Text */
-    --text: #1a1a1a;
-    --text-secondary: #6b7280;
-    --text-tertiary: #9ca3af;
-
-    /* Borders */
-    --border: #e5e7eb;
-    --border-subtle: #f3f4f6;
-
-    /* Brand Accent — Gold */
-    --accent: #c8a951;
-    --accent-dark: #a08838;
-    --accent-light: #e8d48b;
-    --accent-glow: rgba(200, 169, 81, 0.15);
-
-    /* Semantic */
-    --success: #1D9E75;
-    --danger: #E24B4A;
-    --info: #378ADD;
-
-    /* Glass */
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(0, 0, 0, 0.06);
-    --glass-shadow: rgba(0, 0, 0, 0.06);
-
-    /* Sidebar */
-    --sidebar-bg: rgba(255, 255, 255, 0.8);
-    --sidebar-border: #e5e7eb;
-
-    /* Shadcn compatibility */
-    --background: 210 20% 98%;
-    --foreground: 0 0% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
-    --primary: 43 54% 55%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 0 0% 10%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 0 0% 45%;
-    --accent-hsl: 43 54% 55%;
-    --accent-foreground: 0 0% 10%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border-hsl: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 43 54% 55%;
-    --radius: 0.625rem;
-  }
-
-  [data-theme="dark"] {
-    /* Layout */
+    /* Layout — Dark (default) */
     --bg: #0a0f1a;
     --surface: #111827;
     --surface-hover: #1e293b;
@@ -78,11 +20,16 @@
     --border: #1e293b;
     --border-subtle: #1a2332;
 
-    /* Brand Accent — Gold (intensified glow in dark) */
+    /* Brand Accent — Gold */
     --accent: #c8a951;
     --accent-dark: #a08838;
     --accent-light: #e8d48b;
     --accent-glow: rgba(200, 169, 81, 0.25);
+
+    /* Semantic */
+    --success: #1D9E75;
+    --danger: #E24B4A;
+    --info: #378ADD;
 
     /* Glass */
     --glass-bg: rgba(17, 24, 39, 0.7);
@@ -113,6 +60,73 @@
     --border-hsl: 217 33% 17%;
     --input: 217 33% 17%;
     --ring: 43 54% 55%;
+    --radius: 0.625rem;
+  }
+
+  [data-theme="dark"] {
+    /* Explicit dark — same as :root */
+    --bg: #0a0f1a;
+    --surface: #111827;
+    --surface-hover: #1e293b;
+    --text: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #64748b;
+    --border: #1e293b;
+    --border-subtle: #1a2332;
+    --accent-glow: rgba(200, 169, 81, 0.25);
+    --glass-bg: rgba(17, 24, 39, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.06);
+    --glass-shadow: rgba(0, 0, 0, 0.3);
+    --sidebar-bg: rgba(17, 24, 39, 0.8);
+    --sidebar-border: #1e293b;
+    --background: 222 47% 7%;
+    --foreground: 210 40% 96%;
+    --card: 222 47% 9%;
+    --card-foreground: 210 40% 96%;
+    --popover: 222 47% 9%;
+    --popover-foreground: 210 40% 96%;
+    --primary-foreground: 222 47% 7%;
+    --secondary: 217 33% 12%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 217 33% 12%;
+    --muted-foreground: 215 20% 55%;
+    --accent-foreground: 210 40% 96%;
+    --destructive: 0 63% 31%;
+    --border-hsl: 217 33% 17%;
+    --input: 217 33% 17%;
+  }
+
+  [data-theme="light"] {
+    /* Light theme override */
+    --bg: #f8f9fb;
+    --surface: #ffffff;
+    --surface-hover: #f3f4f6;
+    --text: #1a1a1a;
+    --text-secondary: #6b7280;
+    --text-tertiary: #9ca3af;
+    --border: #e5e7eb;
+    --border-subtle: #f3f4f6;
+    --accent-glow: rgba(200, 169, 81, 0.15);
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(0, 0, 0, 0.06);
+    --glass-shadow: rgba(0, 0, 0, 0.06);
+    --sidebar-bg: rgba(255, 255, 255, 0.8);
+    --sidebar-border: #e5e7eb;
+    --background: 210 20% 98%;
+    --foreground: 0 0% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 0 0% 10%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent-foreground: 0 0% 10%;
+    --destructive: 0 84% 60%;
+    --border-hsl: 220 13% 91%;
+    --input: 220 13% 91%;
   }
 }
 
