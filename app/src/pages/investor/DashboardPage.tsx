@@ -1,102 +1,242 @@
+import { useMemo } from "react";
 import { KpiCard } from "@/components/investor/KpiCard";
 import { ChartCard } from "@/components/investor/ChartCard";
 import {
+  useStore,
+  calcMonthlyForecast,
+  calcBreakevenMonth,
+  calcPeakDeficit,
+  calcTierSubsAtMonth,
+} from "@/stores/financialModel";
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line,
+  PieChart, Pie, Cell, LineChart, Line, Legend,
 } from "recharts";
 
-const kpiData = [
-  { label: "Y1 Revenue", value: "$2.4M", trend: "+12%", trendUp: true },
-  { label: "Net Profit", value: "$890K", trend: "+8%", trendUp: true },
-  { label: "Gross Margin", value: "72%", trend: "+3%", trendUp: true },
-  { label: "ROI", value: "3.2x", trend: "+0.4x", trendUp: true },
-  { label: "Breakeven", value: "Month 6", trend: "On track", trendUp: true },
-  { label: "MRR", value: "$198K", trend: "+15%", trendUp: true },
-];
+const fmt = (n: number) =>
+  n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const pct = (n: number) => n.toFixed(1) + "%";
 
-const revenueVsCosts = [
-  { month: "Jan", revenue: 120, costs: 80 },
-  { month: "Feb", revenue: 150, costs: 85 },
-  { month: "Mar", revenue: 180, costs: 90 },
-  { month: "Apr", revenue: 200, costs: 95 },
-  { month: "May", revenue: 240, costs: 100 },
-  { month: "Jun", revenue: 280, costs: 110 },
-];
+const COLORS = ["#c8a951", "#378ADD", "#1D9E75", "#a08838", "#E24B4A", "#9b59b6"];
 
-const revenueMix = [
-  { name: "Commissions", value: 45 },
-  { name: "Subscriptions", value: 30 },
-  { name: "Add-ons", value: 15 },
-  { name: "Advisory", value: 10 },
-];
-const PIE_COLORS = ["#c8a951", "#378ADD", "#1D9E75", "#a08838"];
-
-const profitTrend = [
-  { month: "Jan", profit: 40 },
-  { month: "Feb", profit: 65 },
-  { month: "Mar", profit: 90 },
-  { month: "Apr", profit: 105 },
-  { month: "May", profit: 140 },
-  { month: "Jun", profit: 170 },
-];
+const tooltipStyle = {
+  background: "var(--surface)",
+  border: "1px solid var(--border)",
+  borderRadius: 8,
+  color: "var(--text)",
+};
 
 export function DashboardPage() {
+  const store = useStore();
+  const set = useStore((s) => s.set);
+
+  const forecast = useMemo(() => calcMonthlyForecast(store), [store]);
+
+  const y1 = forecast.slice(0, 12);
+  const y2 = forecast.slice(12, 24);
+
+  const y1Revenue = y1.reduce((a, m) => a + m.totalRevenue, 0);
+  const y1Costs = y1.reduce((a, m) => a + m.totalCosts, 0);
+  const y1Net = y1.reduce((a, m) => a + m.netProfit, 0);
+  const y1Gross = y1.reduce((a, m) => a + m.grossProfit, 0);
+  const y2Revenue = y2.reduce((a, m) => a + m.totalRevenue, 0);
+
+  const netMargin = y1Revenue ? (y1Net / y1Revenue) * 100 : 0;
+  const grossMargin = y1Revenue ? (y1Gross / y1Revenue) * 100 : 0;
+
+  const beMonth = calcBreakevenMonth(forecast);
+  const peakDef = calcPeakDeficit(forecast);
+
+  const totalCapex = store.capex.reduce((a, r) => a + r.cost, 0);
+  const roi = totalCapex ? (y1Net / totalCapex) * 100 : 0;
+
+  const monthlySubMRR = store.subTiers.reduce(
+    (a, tier) => a + tier.price * calcTierSubsAtMonth(tier, 12),
+    0
+  );
+  const subCoverage = y1Costs ? (monthlySubMRR / (y1Costs / 12)) * 100 : 0;
+
+  // Chart data: every 2nd month
+  const revCostData = forecast
+    .filter((_, i) => i % 2 === 0)
+    .map((m) => ({
+      label: m.label,
+      revenue: Math.round(m.totalRevenue),
+      costs: Math.round(m.totalCosts),
+      netProfit: Math.round(m.netProfit),
+    }));
+
+  // Revenue mix Y1
+  const y1Deals = y1.reduce((a, m) => a + m.dealRevenue, 0);
+  const y1Subs = y1.reduce((a, m) => a + m.subRevenue, 0);
+  const y1Addons = y1.reduce((a, m) => a + m.addOnRevenue, 0);
+  const revenueMix = [
+    { name: "Deal Commissions", value: Math.round(y1Deals) },
+    { name: "Subscriptions", value: Math.round(y1Subs) },
+    { name: "Add-ons", value: Math.round(y1Addons) },
+  ];
+
+  // Cost stack (stacked bar, every 2nd month)
+  const costStackData = forecast
+    .filter((_, i) => i % 2 === 0)
+    .map((m) => ({
+      label: m.label,
+      COGS: Math.round(m.cogs),
+      Salaries: Math.round(m.salaries),
+      OpEx: Math.round(m.opex),
+      Depreciation: Math.round(m.depreciation),
+    }));
+
+  // Cumulative cash line
+  const cumCashData = forecast.map((m) => ({
+    label: m.label,
+    cumCash: Math.round(m.cumCash),
+  }));
+
+  const mainKpis = [
+    { label: "Y1 Revenue", value: fmt(y1Revenue), trend: fmt(y1Revenue), trendUp: y1Revenue > 0 },
+    { label: "Net Profit", value: fmt(y1Net), trend: y1Net >= 0 ? "Profitable" : "Loss", trendUp: y1Net >= 0 },
+    { label: "Net Margin", value: pct(netMargin), trend: netMargin >= 0 ? "Healthy" : "Negative", trendUp: netMargin >= 0 },
+    { label: "Gross Margin", value: pct(grossMargin), trend: grossMargin >= 50 ? "Strong" : "Low", trendUp: grossMargin >= 50 },
+    { label: "Breakeven Month", value: beMonth ? `Month ${beMonth}` : "N/A", trend: beMonth && beMonth <= 12 ? "Within Y1" : "Beyond Y1", trendUp: beMonth !== null && beMonth <= 12 },
+    { label: "ROI", value: pct(roi), trend: roi >= 100 ? "Positive" : "Below 100%", trendUp: roi >= 100 },
+  ];
+
+  const secondaryKpis = [
+    { label: "Peak Funding Deficit", value: fmt(peakDef), trend: peakDef < 0 ? "Funding needed" : "Self-funded", trendUp: peakDef >= 0 },
+    { label: "Subscription MRR", value: fmt(monthlySubMRR), trend: pct(subCoverage) + " cost coverage", trendUp: subCoverage >= 50 },
+    { label: "Y2 Revenue Projection", value: fmt(y2Revenue), trend: y1Revenue ? pct(((y2Revenue - y1Revenue) / y1Revenue) * 100) + " YoY" : "N/A", trendUp: y2Revenue > y1Revenue },
+  ];
+
   return (
     <div className="space-y-8">
       <div className="section-label">Dashboard</div>
+
+      {/* Main KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        {kpiData.map((kpi) => (
+        {mainKpis.map((kpi) => (
           <KpiCard key={kpi.label} {...kpi} />
         ))}
       </div>
+
+      {/* Secondary KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {secondaryKpis.map((kpi) => (
+          <KpiCard key={kpi.label} {...kpi} />
+        ))}
+      </div>
+
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard title="Revenue vs Costs">
+        <ChartCard title="Revenue vs Costs vs Net Profit">
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={revenueVsCosts}>
+            <BarChart data={revCostData}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="month" tick={{ fill: "var(--text-tertiary)", fontSize: 12 }} />
+              <XAxis dataKey="label" tick={{ fill: "var(--text-tertiary)", fontSize: 12 }} />
               <YAxis tick={{ fill: "var(--text-tertiary)", fontSize: 12 }} />
-              <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text)" }} />
-              <Bar dataKey="revenue" fill="#c8a951" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="costs" fill="var(--border)" radius={[4, 4, 0, 0]} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => fmt(v)} />
+              <Legend />
+              <Bar dataKey="revenue" name="Revenue" fill="#c8a951" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="costs" name="Costs" fill="#378ADD" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="netProfit" name="Net Profit" fill="#1D9E75" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
-        <ChartCard title="Revenue Mix">
+
+        <ChartCard title="Revenue Mix Y1">
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
-              <Pie data={revenueMix} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value" stroke="none">
+              <Pie data={revenueMix} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value" stroke="none" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                 {revenueMix.map((_, i) => (
-                  <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text)" }} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => fmt(v)} />
             </PieChart>
           </ResponsiveContainer>
         </ChartCard>
-        <ChartCard title="Profit Trend">
+
+        <ChartCard title="Cost Stack">
           <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={profitTrend}>
+            <BarChart data={costStackData}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="month" tick={{ fill: "var(--text-tertiary)", fontSize: 12 }} />
+              <XAxis dataKey="label" tick={{ fill: "var(--text-tertiary)", fontSize: 12 }} />
               <YAxis tick={{ fill: "var(--text-tertiary)", fontSize: 12 }} />
-              <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text)" }} />
-              <Line type="monotone" dataKey="profit" stroke="#c8a951" strokeWidth={2} dot={{ fill: "#c8a951", r: 4 }} activeDot={{ r: 6, fill: "#c8a951", stroke: "var(--surface)", strokeWidth: 2 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
-        <ChartCard title="Cost Breakdown">
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={[{ category: "Salaries", amount: 45 }, { category: "Marketing", amount: 20 }, { category: "Infrastructure", amount: 15 }, { category: "Operations", amount: 12 }, { category: "Legal", amount: 8 }]} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis type="number" tick={{ fill: "var(--text-tertiary)", fontSize: 12 }} />
-              <YAxis dataKey="category" type="category" tick={{ fill: "var(--text-tertiary)", fontSize: 12 }} width={90} />
-              <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text)" }} />
-              <Bar dataKey="amount" fill="#378ADD" radius={[0, 4, 4, 0]} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => fmt(v)} />
+              <Legend />
+              <Bar dataKey="COGS" stackId="a" fill="#c8a951" />
+              <Bar dataKey="Salaries" stackId="a" fill="#378ADD" />
+              <Bar dataKey="OpEx" stackId="a" fill="#1D9E75" />
+              <Bar dataKey="Depreciation" stackId="a" fill="#a08838" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
+
+        <ChartCard title="Cumulative Cash">
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={cumCashData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="label" tick={{ fill: "var(--text-tertiary)", fontSize: 12 }} />
+              <YAxis tick={{ fill: "var(--text-tertiary)", fontSize: 12 }} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => fmt(v)} />
+              <Line type="monotone" dataKey="cumCash" name="Cumulative Cash" stroke="#c8a951" strokeWidth={2} dot={{ fill: "#c8a951", r: 3 }} activeDot={{ r: 5, fill: "#c8a951", stroke: "var(--surface)", strokeWidth: 2 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
       </div>
+
+      {/* Interactive Sliders */}
+      <div className="glass-card p-6 space-y-6">
+        <div className="section-label">Model Parameters</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          <SliderRow label="Deals per Year" value={store.dealsPerYear} min={0} max={100} step={1} display={String(store.dealsPerYear)} onChange={(v) => set({ dealsPerYear: v })} />
+          <SliderRow label="Avg Deal Value" value={store.avgDealValue} min={500000} max={20000000} step={100000} display={fmt(store.avgDealValue)} onChange={(v) => set({ avgDealValue: v })} />
+          <SliderRow label="Commission Rate" value={store.commissionRate} min={0} max={10} step={0.1} display={pct(store.commissionRate)} onChange={(v) => set({ commissionRate: v })} />
+          <SliderRow label="Deal Ramp-Up Months" value={store.dealRampUpMonths} min={1} max={12} step={1} display={`${store.dealRampUpMonths} mo`} onChange={(v) => set({ dealRampUpMonths: v })} />
+          <SliderRow label="Revenue Growth Rate" value={store.revenueGrowthRate} min={0} max={50} step={1} display={pct(store.revenueGrowthRate)} onChange={(v) => set({ revenueGrowthRate: v })} />
+          <SliderRow label="Starting Cash" value={store.startingCash} min={0} max={2000000} step={10000} display={fmt(store.startingCash)} onChange={(v) => set({ startingCash: v })} />
+          <SliderRow label="Tax Rate" value={store.taxRate} min={0} max={50} step={1} display={pct(store.taxRate)} onChange={(v) => set({ taxRate: v })} />
+          <SliderRow label="COGS per Deal" value={store.cogsPerDeal} min={0} max={50000} step={500} display={fmt(store.cogsPerDeal)} onChange={(v) => set({ cogsPerDeal: v })} />
+        </div>
+
+        {/* Toggle switches */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
+          <ToggleRow label="Subscription Revenue" active={store.subRevenueMultiplier > 0} onChange={(on) => set({ subRevenueMultiplier: on ? 100 : 0 })} />
+          <ToggleRow label="Add-on Revenue" active={store.addOnRevenueMultiplier > 0} onChange={(on) => set({ addOnRevenueMultiplier: on ? 100 : 0 })} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SliderRow({ label, value, min, max, step, display, onChange }: {
+  label: string; value: number; min: number; max: number; step: number; display: string; onChange: (v: number) => void;
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium" style={{ color: "var(--text-tertiary)" }}>{label}</span>
+        <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>{display}</span>
+      </div>
+      <input type="range" className="gold-slider w-full" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </div>
+  );
+}
+
+function ToggleRow({ label, active, onChange }: { label: string; active: boolean; onChange: (on: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-sm font-medium" style={{ color: "var(--text)" }}>{label}</span>
+      <button
+        onClick={() => onChange(!active)}
+        className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+        style={{ backgroundColor: active ? "#c8a951" : "var(--border)" }}
+      >
+        <span
+          className="inline-block h-4 w-4 rounded-full bg-white transition-transform"
+          style={{ transform: active ? "translateX(24px)" : "translateX(4px)" }}
+        />
+      </button>
     </div>
   );
 }
