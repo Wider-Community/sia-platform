@@ -8,6 +8,7 @@
 | 02 | [Sequence Diagrams](02-SEQUENCE-DIAGRAMS.md) | 12 scenarios showing exact system interactions: auth, onboarding, matching, relationships, signatures, journeys, portfolio, financial models, admin ops |
 | 03 | [Activity Diagrams](03-ACTIVITY-DIAGRAMS.md) | 9 end-to-end user flows with every decision point: complete user journey, auth flow, onboarding paths, matching lifecycle, relationship progression, integration tiers, signature flow, financial model visibility, org invitations |
 | 04 | [Persona Activities](04-PERSONA-ACTIVITIES.md) | Dedicated experience per persona (Investor, Company, Government, Startup). Business Canvas Model, Financial Model Builder, AI Advisory Agent, Partnership Value Simulator, Product-Led Growth tiers (Free/Trial/Paid) |
+| 05 | [Superpowers, OKR & Deal Lifecycle](05-SUPERPOWERS-AND-OKR.md) | 7 Superpowers framework, OKR system (objective matching, joint OKRs, CAPEX/OPEX estimation), full deal document lifecycle (LOI → NDA → MoU → Contract), collaborative document editor, secure deal rooms, portfolio aggregation (the arsenal view) |
 
 ## How to View
 
