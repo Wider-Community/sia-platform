@@ -7,6 +7,7 @@
 | 01 | [Domain Model](01-DOMAIN-MODEL.md) | Entity relationship diagram, all data entities and their relationships, Mujarrad graph mapping |
 | 02 | [Sequence Diagrams](02-SEQUENCE-DIAGRAMS.md) | 12 scenarios showing exact system interactions: auth, onboarding, matching, relationships, signatures, journeys, portfolio, financial models, admin ops |
 | 03 | [Activity Diagrams](03-ACTIVITY-DIAGRAMS.md) | 9 end-to-end user flows with every decision point: complete user journey, auth flow, onboarding paths, matching lifecycle, relationship progression, integration tiers, signature flow, financial model visibility, org invitations |
+| 04 | [Persona Activities](04-PERSONA-ACTIVITIES.md) | Dedicated experience per persona (Investor, Company, Government, Startup). Business Canvas Model, Financial Model Builder, AI Advisory Agent, Partnership Value Simulator, Product-Led Growth tiers (Free/Trial/Paid) |
 
 ## How to View
 
