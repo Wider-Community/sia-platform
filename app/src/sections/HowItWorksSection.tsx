@@ -10,8 +10,7 @@ const steps = [
 ];
 
 export function HowItWorksSection() {
-  const { t, i18n } = useTranslation();
-  const isRtl = i18n.language === "ar";
+  const { t } = useTranslation();
 
   return (
     <section
