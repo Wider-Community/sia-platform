@@ -4,187 +4,201 @@
 
 **Deal Flow CRM with Client Portal and Configurable Workflow Engine**
 
-Also known as: B2B Investment Portal, Investor Intake & Deal Management Platform, Client Service Request Portal with Dynamic Process Orchestration.
+Also known as: B2B Investment Portal, Investor Intake & Deal Management Platform.
 
 ---
 
 ## Architecture Model
 
 ```
-Admin defines process types & stages in Mujarrad (graph DB)
-    ↓
-Mujarrad stores: workflow definitions, form schemas, transition rules
-    ↓
-SIA Frontend fetches workflow config at runtime
-    ↓
-User logs in (Google OAuth via Mujarrad) → picks request type → fills dynamic forms → tracks status
-    ↓
-Each request instance traverses the workflow graph stored in Mujarrad
+Phase 1 (MVP): Hardcoded workflows in frontend, Mujarrad stores data
+Phase 2 (Full): XyOps configures processes, Mujarrad stores data, Tally.so-style dynamic forms
 ```
 
-**Key principle:** Admin configures everything dynamically. No code deployment needed to add a new process type, change stages, or modify forms.
-
----
-
-## Module Feature Mesh
-
-| # | Module | Features | Phase | Open Source Reference | SIA Implementation |
-|---|--------|----------|-------|----------------------|-------------------|
-| **1** | **Authentication** | Google OAuth, email/password, JWT storage, protected routes, role-based access (client vs admin) | 1 | Mujarrad Backend (own), @react-oauth/google | Call `POST /api/auth/oauth/google` with Google ID token → store JWT in Zustand + localStorage |
-| **2** | **Process Type Registry** | Admin creates/edits process types (deal inquiry, partnership, consultation, custom). Each type has: name, description, icon, category, workflow definition | 1 | n8n (workflow type registry pattern) | Admin UI: CRUD process types in Mujarrad. Frontend: fetch types from `/api/spaces/{slug}/nodes` |
-| **3** | **Dynamic Workflow Engine** | Each process type has configurable stages. Stages are graph nodes in Mujarrad. Transitions are edges (`next`, `triggers`). Guards/conditions on transitions. SLA timers per stage | 1 (hardcoded) → 2 (dynamic) | n8n (node graph), Directus Flows | Phase 1: stages as JSON arrays in frontend. Phase 2: fetch workflow graph from Mujarrad, render with config-driven engine |
-| **4** | **Dynamic Form Rendering** | Each workflow stage has a form schema (JSON Schema). Forms render dynamically from config. Conditional fields, validation rules, file uploads. Multi-step wizards | 1 (static) → 2 (dynamic) | react-jsonschema-form (rjsf) + shadcn/ui theme, SurveyJS, Formbricks | Phase 1: Zod schemas + react-hook-form + shadcn inputs. Phase 2: rjsf rendering from Mujarrad-stored JSON Schema |
-| **5** | **Request Submission** | User selects process type → fills intake form → submits. Creates a request node in Mujarrad with `current_stage` pointer. Draft save support | 1 | Formbricks (intake flow), Peppermint (ticket creation) | `POST /api/spaces/{slug}/nodes` to create request node. Attribute `has_stage` → first stage node |
-| **6** | **Status Dashboard (Client)** | User sees all their requests. Each shows: type, current stage, progress indicator, timeline of events, next action needed. Filter by type/status | 1 | shadcn-admin (data tables), NextCRM (deal pipeline) | Fetch user's requests from Mujarrad. Render with shadcn Table + Badge + Progress components |
-| **7** | **Status Timeline & Activity** | Per-request detail view. Vertical timeline showing every stage transition, comment, document upload. Immutable audit trail | 1 | Peppermint (ticket history), NextCRM (change history) | Mujarrad node versioning provides history. Render as shadcn timeline with Framer Motion animations |
-| **8** | **Admin Pipeline View** | Admin sees all requests across all types. Kanban board (columns = stages). List view with filters. Assign team members. Bulk actions | 2 | atomic-crm (Kanban pipeline), Plane (issue boards), Kiranism/next-shadcn-dashboard-starter (Kanban) | shadcn Card + dnd-kit for drag-drop Kanban. Fetch all requests from Mujarrad |
-| **9** | **Admin Workflow Designer** | Visual drag-and-drop editor for defining workflow stages and transitions. Create new process types. Edit form schemas per stage. Set SLA rules | 2 | ReactFlow (already in Mujarrad-Frontend), n8n (visual workflow builder) | ReactFlow-based editor. Save graph back to Mujarrad nodes/attributes |
-| **10** | **Notification System** | Email on stage transitions. In-app notification bell. Configurable templates per event type. Digest mode | 2 | Novu (notification infrastructure) | Phase 1: toast notifications (sonner, already installed). Phase 2: email via backend integration |
-| **11** | **Document Management** | Upload files per request/stage. View/download. Version history. Permission controls | 2 | Papermark (document sharing) | Mujarrad node attributes for file references. S3/cloud storage for actual files |
-| **12** | **Meeting & Calendar** | Schedule meetings tied to a request stage. Calendar sync. Meeting notes | 3 | Cal.com (scheduling) | Embed Cal.com or build custom with shadcn Calendar component |
-| **13** | **Reporting & Analytics** | Admin dashboard: funnel conversion, volume by sector/type, SLA compliance, time-to-close | 3 | shadcn-admin (chart patterns), Recharts (already installed) | Recharts + shadcn Card for KPI dashboard |
-| **14** | **Localization (i18n)** | Arabic RTL + English LTR. All UI, forms, workflow labels, notifications | 1 | Already implemented in SIA (react-i18next) | Extend existing i18n. Workflow labels stored bilingual in Mujarrad |
-| **15** | **Audit Log** | Immutable record of every action: who, what, when. Required for compliance | 2 | Mujarrad versioning (built-in) | Mujarrad's node versioning = automatic audit trail |
-
----
-
-## Mujarrad Graph Mapping
-
 ```
-Mujarrad Concept          →  Portal Concept
-──────────────────────────────────────────────
-Space                     →  "sia-portal" (the portal workspace)
-Context Node              →  Process Type Definition (e.g., "Deal Inquiry")
-Child Nodes of Context    →  Workflow Stages (ordered by 'next' edges)
-Node.nodeDetails          →  Stage config: { formSchema, assignedRole, sla, label }
-Attribute (next)          →  Sequential stage transition
-Attribute (triggers)      →  Conditional/branching transition
-Regular Node (separate)   →  Request Instance (user submission)
-Attribute (has_stage)     →  Current stage pointer on a request
-Attribute (submitted_by)  →  User who created the request
-Node Versions             →  Automatic audit trail / history
+User → Google Login (Mujarrad) → Select request type → Tally-style form → Submit
+    → Dashboard: see all requests + status
+    → Request detail: timeline, documents, signatures
 ```
 
-Admin creates a new process type = creates a new Context Node in Mujarrad with child stage nodes.
+**MVP principle:** Simple, working, clean. Configure later.
 
 ---
 
-## Phase 1 — MVP Implementation (Frontend-First)
+## Modules (Deduplicated)
 
-What to build NOW with hardcoded workflows:
+| # | Module | MVP Scope | Phase 2 | Reference |
+|---|--------|-----------|---------|-----------|
+| **1** | **Authentication** | Google OAuth via Mujarrad. JWT in Zustand + localStorage. Protected routes | Add email/password option | Mujarrad-Frontend (own) |
+| **2** | **Business Profile & Organizations** | Shared org account. Invite members by email → they sign up with Gmail → join same org. All members have equal access. Org profile: company name, registration, country, sector, description | Teams under org with role-based access | — |
+| **3** | **Request Intake (Tally-style)** | One-question-at-a-time flow (like Tally.so). Clean, focused, conversational. 3 request types hardcoded: Deal Inquiry, Partnership, Consultation. Each type has its own question sequence | Dynamic form builder. Mujarrad-Frontend upgraded to Tally-style form engine. Admin creates form sequences | Tally.so (UX reference), Mujarrad-Frontend (base to upgrade) |
+| **4** | **Process Stages** | Hardcoded stages per request type. Linear progression. Status stored in Mujarrad | XyOps integration for configurable process definitions. Each step as a workflow node. Branching, parallel stages, conditions | XyOps (own) |
+| **5** | **Status Dashboard** | User sees all org requests in a table. Each shows: type, current stage, progress bar, date submitted. Click to see detail | Filters, search, sort. Kanban view for admin | shadcn-admin (Vite + shadcn) |
+| **6** | **Request Detail & Timeline** | Vertical timeline: every stage change, document upload, signature event. Current stage highlighted. Next action shown | Comments, internal notes (admin-only) | Peppermint (ticket history) |
+| **7** | **Document Management** | Upload files per request. View/download. Tied to specific stage. Org-level document storage | Version history, permission controls per doc | Papermark |
+| **8** | **Digital Signatures** | Sign documents within the platform. Single signer or multi-signer. Signature request as a stage action: SIA uploads doc → user(s) sign → process advances. Audit trail per signature | Signature templates, bulk signing, legally binding with timestamp + IP | Documenso (Next.js + TS, 9k stars, MIT) |
+| **9** | **Notifications** | In-app toasts (sonner, already installed). Email on key events: new signature request, stage change, invitation to org | Configurable templates, digest mode, notification preferences | sonner (installed) |
+| **10** | **Localization (i18n)** | Arabic RTL + English LTR. All UI, form questions, stage labels | Workflow labels bilingual in Mujarrad | react-i18next (already implemented) |
+| **11** | **Audit Trail** | Automatic via Mujarrad node versioning. Every state change, signature, upload logged | Exportable audit report for compliance | Mujarrad versioning (built-in) |
 
-### Pages to Add to SIA
-1. `/login` — Google OAuth login (via Mujarrad)
-2. `/dashboard` — User's request list + status
-3. `/request/new` — Select process type → multi-step form
-4. `/request/:id` — Request detail + timeline + status
+**Removed:** Meeting & Calendar (users meet externally), Admin Workflow Designer (Phase 2 via XyOps), Reporting & Analytics (Phase 2), Process Type Registry (Phase 2 via XyOps).
 
-### Components Needed
-| Component | Source/Reference | shadcn Components Used |
-|-----------|-----------------|----------------------|
-| GoogleLoginButton | Copy pattern from Mujarrad-Frontend | Button |
-| AuthProvider (Zustand) | Copy pattern from Mujarrad-Frontend | — |
-| ProtectedRoute | Copy pattern from Mujarrad-Frontend | — |
-| ProcessTypeSelector | New (grid of cards) | Card, Badge |
-| MultiStepForm | New (wizard pattern) | Form, Input, Select, Textarea, Progress, Button |
-| RequestList | New (data table) | Table, Badge, Button |
-| RequestDetail | New (detail + timeline) | Card, Badge, Separator, Progress |
-| StatusTimeline | New (vertical timeline) | — (custom with Framer Motion) |
-| DashboardLayout | Reference shadcn-admin | Sidebar, ScrollArea, Separator |
+---
 
-### Hardcoded Workflow Types (Phase 1)
-```typescript
-// 3 initial process types, each with stages
-const PROCESS_TYPES = [
-  {
-    id: 'deal-inquiry',
-    name: 'Deal Inquiry',
-    icon: 'Handshake',
-    stages: ['Submission', 'SIA Review', 'Initial Assessment', 'Meeting Scheduled', 'In Progress', 'Completed']
-  },
-  {
-    id: 'partnership',
-    name: 'Partnership Request',
-    icon: 'Users',
-    stages: ['Application', 'Review', 'Due Diligence', 'Approval', 'Onboarding']
-  },
-  {
-    id: 'consultation',
-    name: 'General Consultation',
-    icon: 'MessageSquare',
-    stages: ['Request Submitted', 'Under Review', 'Consultation Scheduled', 'Completed']
-  }
-]
+## Organization & Team Model (MVP)
+
+```
+Organization (shared account)
+├── Owner (whoever created it)
+├── Member (invited via email, signs up with Gmail, same access as owner)
+├── Member
+└── Member
+
+All members see the same requests, documents, and org profile.
+No roles in MVP — everyone has equal access.
 ```
 
-### Request Form Fields (Phase 1 — per type)
-
-**Deal Inquiry:**
-- Company name, website, country
-- Sector (dropdown: 8 SIA sectors)
-- Deal type (investment, JV, M&A, trade)
-- Estimated deal size ($2M-$50M range)
-- Target market (KSA → Malaysia or Malaysia → KSA)
-- Brief description (textarea)
-- Supporting documents (file upload)
-
-**Partnership Request:**
-- Company name, registration number, country
-- Type of partnership (advisory, referral, co-facilitation)
-- Areas of expertise (multi-select: sectors)
-- Track record / portfolio summary (textarea)
-- References (textarea)
-
-**General Consultation:**
-- Full name, company, role
-- Topic of interest (dropdown)
-- Preferred language (English / Arabic)
-- Message (textarea)
+**Invitation flow:**
+1. Owner goes to Org Settings → Invite Member
+2. Enters email address
+3. Invitee receives email with signup/login link
+4. Invitee signs up or logs in with Gmail
+5. Invitee is automatically added to the org
+6. Both see the same dashboard, requests, documents
 
 ---
 
-## Phase 2 — Dynamic Configuration
+## Signature Flow
 
-- Admin workflow designer (ReactFlow-based visual editor)
-- Form schemas stored as JSON Schema in Mujarrad `nodeDetails`
-- react-jsonschema-form (rjsf) renders forms dynamically
-- Admin can create new process types, add/remove/reorder stages, edit forms — all without code
+```
+1. SIA team uploads a document to a request (e.g., NDA, term sheet)
+2. SIA marks which users need to sign (one or multiple from the org)
+3. Each signer gets a notification
+4. Signer opens document → reviews → draws/types signature → submits
+5. Once all required signers complete → document is finalized
+6. Signed document with audit trail (timestamp, IP, signer identity) stored
+7. If signature was a stage requirement → process automatically advances
+```
 
 ---
 
-## Phase 3 — Full Platform
+## Tally.so-Style Form Experience
 
-- Document management with versioning
-- Calendar/meeting integration
-- Email notification templates
-- Analytics dashboard
-- E-signatures (Documenso integration)
+Instead of a traditional form with all fields visible, the intake experience is conversational:
+
+```
+Screen 1: "What type of request?"
+           [Deal Inquiry]  [Partnership]  [Consultation]
+
+Screen 2: "What's your company name?"
+           [____________________]
+
+Screen 3: "Which sector?"
+           [Halal & Food]  [Healthcare]  [Real Estate]  ...
+
+Screen 4: "Estimated deal size?"
+           [$2M-$5M]  [$5M-$15M]  [$15M-$50M]
+
+Screen 5: "Tell us about the opportunity"
+           [textarea]
+
+Screen 6: "Upload any supporting documents"
+           [Drop files here]
+
+Screen 7: ✓ "Request submitted! We'll review within 48 hours."
+```
+
+- One question per screen
+- Progress bar at top
+- Keyboard navigation (Enter to advance)
+- Smooth transitions (Framer Motion)
+- Mobile-first
+- Builds on Mujarrad-Frontend (upgrade to this UX)
+
+---
+
+## Pages (MVP)
+
+| Route | Page | Auth Required |
+|-------|------|--------------|
+| `/` | Landing page (current SIA website) | No |
+| `/login` | Google OAuth login | No |
+| `/onboarding` | Create or join org + business profile setup | Yes |
+| `/dashboard` | Request list + status overview | Yes |
+| `/request/new` | Tally-style intake form | Yes |
+| `/request/:id` | Request detail + timeline + documents + signatures | Yes |
+| `/settings` | Org profile, members, invitations | Yes |
+
+---
+
+## Components Needed (MVP)
+
+| Component | shadcn/ui Components | New or Copy |
+|-----------|---------------------|-------------|
+| GoogleLoginButton | Button | Copy from Mujarrad-Frontend |
+| AuthStore (Zustand) | — | Copy from Mujarrad-Frontend |
+| ProtectedRoute | — | Copy from Mujarrad-Frontend |
+| OrgOnboarding | Card, Input, Button | New |
+| TallyForm (one-question-at-a-time) | Input, Select, Textarea, Button, Progress | New (core component) |
+| ProcessTypeSelector | Card, Badge | New |
+| RequestList | Table, Badge, Progress | New |
+| RequestDetail | Card, Badge, Separator | New |
+| StatusTimeline | — (Framer Motion custom) | New |
+| DocumentUpload | Input, Button, Card | New |
+| SignatureCanvas | Dialog, Button | New (canvas-based) |
+| SignatureRequest | Card, Badge, Button | New |
+| OrgSettings | Input, Button, Table, Dialog | New |
+| InviteMember | Dialog, Input, Button | New |
+| DashboardLayout | Sidebar, ScrollArea | Reference shadcn-admin |
+
+---
+
+## Hardcoded Workflows (MVP)
+
+### Deal Inquiry
+```
+Submission → SIA Review → Initial Assessment → Documentation & Signatures → In Progress → Completed
+```
+Form: company, sector, deal type, deal size, target market, description, documents
+
+### Partnership Request
+```
+Application → Review → Due Diligence → Documentation & Signatures → Onboarding → Active
+```
+Form: company, registration, partnership type, expertise areas, track record, references
+
+### General Consultation
+```
+Request Submitted → Under Review → Response Sent → Completed
+```
+Form: name, company, role, topic, preferred language, message
 
 ---
 
 ## Open Source Reference Matrix
 
-| What to Extract | From Which Project | Stars | Stack Match |
-|-----------------|-------------------|-------|-------------|
-| Dashboard layout, tables, sidebar | satnaing/shadcn-admin | 11.8k | Exact (Vite + React + TS + shadcn) |
-| Multi-step form patterns | Formbricks | 12.1k | High (Next.js + TS + Tailwind) |
-| CRM deal lifecycle (leads → pipeline) | NextCRM | 579 | High (Next.js + shadcn) |
-| Ticket submission → status flow | Peppermint | 3.1k | Medium (Next.js + React) |
-| Kanban pipeline board | atomic-crm | 936 | Medium (React + shadcn) |
-| Kanban with drag-drop | Kiranism/next-shadcn-dashboard-starter | 6.3k | High (Next.js + shadcn + dnd-kit) |
-| Visual workflow builder | ReactFlow | 25k | Already in Mujarrad-Frontend |
-| Dynamic form from JSON Schema | react-jsonschema-form (rjsf) | 15.7k | Has official shadcn/ui theme |
-| Workflow state machine | XState v5 | 27k | React hooks via @xstate/react |
-| Auth patterns (Google OAuth) | Mujarrad-Frontend (own) | — | Exact reference |
+| What | From | Stars | Stack Match |
+|------|------|-------|-------------|
+| Dashboard shell (sidebar, tables) | satnaing/shadcn-admin | 11.8k | **Exact** (Vite + React + TS + shadcn) |
+| Auth (Google OAuth, store, protected routes) | Mujarrad-Frontend (own) | — | **Exact** |
+| Tally-style form UX | Tally.so | — | UX reference only |
+| Form engine base | Mujarrad-Frontend (own) | — | To be upgraded |
+| Ticket lifecycle (submit → track) | Peppermint | 3.1k | Medium (Next.js) |
+| Digital signatures | Documenso | 9k | High (Next.js + TS + Prisma) |
+| Document sharing | Papermark | 6k | High (Next.js + TS) |
+| CRM deal patterns | NextCRM | 579 | High (Next.js + shadcn) |
 
 ---
 
 ## Fastest Implementation Path
 
-1. **Copy auth patterns** from Mujarrad-Frontend (GoogleLoginButton, auth store, protected routes)
-2. **Copy dashboard shell** from shadcn-admin (sidebar layout, data tables, cards)
-3. **Build request forms** using existing shadcn Form + Input + Select + Textarea
-4. **Hardcode 3 workflows** as TypeScript objects (upgrade to Mujarrad-backed later)
-5. **Store requests** in Mujarrad via API (`POST /api/spaces/sia-portal/nodes`)
-6. **Build status dashboard** with shadcn Table + Badge + Progress
-7. **Replace "Schedule a Conversation" CTAs** with "Get Started" → login → request flow
+1. **Auth** — Copy Google OAuth from Mujarrad-Frontend, adapt for Vite
+2. **Routing** — Add react-router-dom, set up pages (landing, login, dashboard, request, settings)
+3. **Org onboarding** — Simple org creation form, store in Mujarrad
+4. **Tally-style form** — Build the one-question-at-a-time component with Framer Motion transitions
+5. **3 request types** — Hardcoded question sequences, submit to Mujarrad API
+6. **Dashboard** — Fetch requests, render with shadcn Table + Badge + Progress
+7. **Request detail** — Timeline + document list + signature status
+8. **Signatures** — Canvas-based signature capture, multi-signer support, PDF embedding
+9. **Invitations** — Invite by email, join org on signup
+10. **Replace CTAs** — All "Schedule a Conversation" → "Get Started" → login flow
