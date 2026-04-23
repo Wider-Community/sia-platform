@@ -5,7 +5,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        border: "hsl(var(--border-hsl, var(--border)))",
+        border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
@@ -27,7 +27,7 @@ module.exports = {
           foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent-hsl, var(--accent)))",
+          DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
         popover: {
@@ -38,11 +38,19 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // SIA brand colors
         gold: {
-          DEFAULT: "#c8a951",
-          dark: "#a08838",
-          light: "#e8d48b",
+          DEFAULT: "rgb(200 169 81 / <alpha-value>)",
+          dark: "rgb(160 136 56 / <alpha-value>)",
+          light: "rgb(232 212 139 / <alpha-value>)",
         },
+        charcoal: "rgb(28 28 30 / <alpha-value>)",
+        silver: {
+          DEFAULT: "rgb(192 192 192 / <alpha-value>)",
+          light: "rgb(232 232 232 / <alpha-value>)",
+        },
+        navy: "rgb(26 26 28 / <alpha-value>)",
+        // Investor portal semantic colors
         success: "#1D9E75",
         danger: "#E24B4A",
         info: "#378ADD",
@@ -58,12 +66,10 @@ module.exports = {
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-        'card': '0 4px 6px -1px var(--glass-shadow)',
-        'card-hover': '0 10px 25px -5px var(--glass-shadow)',
-        'gold-glow': '0 0 40px var(--accent-glow)',
+        'card': '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)',
+        'card-hover': '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)',
+        'gold-glow': '0 0 40px rgba(200, 169, 81, 0.15)',
         'gold-glow-lg': '0 0 80px rgba(200, 169, 81, 0.2)',
-        'emissive': '0 0 20px var(--accent-glow)',
-        'emissive-lg': '0 0 35px var(--accent-glow), 0 0 60px rgba(200, 169, 81, 0.08)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
@@ -87,6 +93,7 @@ module.exports = {
           "0%,70%,100%": { opacity: "1" },
           "20%,50%": { opacity: "0" },
         },
+        // marquee keyframes defined in index.css to support --speed variable
         "fade-in": {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },
@@ -108,6 +115,7 @@ module.exports = {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "caret-blink": "caret-blink 1.25s ease-out infinite",
+        // marquee animations defined in index.css to support --speed variable
         "fade-in": "fade-in 0.5s ease-out forwards",
         "slide-up": "slide-up 0.5s ease-out forwards",
         "pulse-slow": "pulse-slow 3s ease-in-out infinite",
