@@ -26,22 +26,22 @@ This implementation follows a strict 5-phase methodology. Each phase MUST be com
 - [ ] 2.9 Review and approve all design artifacts before proceeding
 
 ## Phase 3 — Design Implementation
-- [ ] 3.1 Scaffold refine.dev app with React Router
-- [ ] 3.2 Implement Mujarrad data provider (~200 lines) conforming to refine DataProvider interface
-- [ ] 3.3 Implement mock data provider with in-memory seed data (same interface)
-- [ ] 3.4 Implement auth provider (~80 lines) wrapping Mujarrad JWT + Google OAuth
-- [ ] 3.5 Implement notification adapter (refine → sonner, ~10 lines)
-- [ ] 3.6 Implement i18n adapter (refine → react-i18next, ~15 lines)
-- [ ] 3.7 Define Zod schemas for Organization, Contact, FileRecord, Note, ActivityEvent
-- [ ] 3.8 Define refine resource configurations for all node types
-- [ ] 3.9 Integrate shadcn-admin layout components (sidebar, header, theme, error pages) with refine routing and `<Authenticated>`
-- [ ] 3.10 Wire shadcn-admin auth pages to refine `useLogin`/`useRegister`
-- [ ] 3.11 Deploy Typesense via Docker Compose on the server
-- [ ] 3.12 Create Typesense collections (organizations, contacts, files) with defined schemas
-- [ ] 3.13 Build local ETL watcher: monitors R2 for new uploads via R2 Event Notifications (Cloudflare Queue) or S3-compatible ListObjectsV2 polling, triggers Wider Tooling extraction, pushes results to Typesense API
-- [ ] 3.14 Configure Wider Tooling pipeline for SIA file types (PDF, DOCX, XLSX, PPTX) with Round 1 + Round 2 fallback
-- [ ] 3.14a Build transformer: maps Wider Tooling extract_file() output to Typesense document JSON schema (id, file_name, organization_id, file_type, uploaded_at, content)
-- [ ] 3.15 Implement Typesense search adapter for Cmd+K queries (~60 lines)
+- [x] 3.1 Scaffold refine.dev app with React Router
+- [x] 3.2 Implement Mujarrad data provider (~200 lines) conforming to refine DataProvider interface
+- [x] 3.3 Implement mock data provider with in-memory seed data (same interface)
+- [x] 3.4 Implement auth provider (~80 lines) wrapping Mujarrad JWT + Google OAuth
+- [x] 3.5 Implement notification adapter (refine → sonner, ~10 lines)
+- [x] 3.6 Implement i18n adapter (refine → react-i18next, ~15 lines)
+- [x] 3.7 Define Zod schemas for Organization, Contact, FileRecord, Note, ActivityEvent
+- [x] 3.8 Define refine resource configurations for all node types
+- [x] 3.9 Integrate shadcn-admin layout components (sidebar, header, theme, error pages) with refine routing and `<Authenticated>`
+- [x] 3.10 Wire shadcn-admin auth pages to refine `useLogin`/`useRegister`
+- [x] 3.11 Deploy Typesense via Docker Compose on the server
+- [x] 3.12 Create Typesense collections (organizations, contacts, files) with defined schemas
+- [x] 3.13 Build local ETL watcher: monitors R2 for new uploads via R2 Event Notifications (Cloudflare Queue) or S3-compatible ListObjectsV2 polling, triggers Wider Tooling extraction, pushes results to Typesense API
+- [x] 3.14 Configure Wider Tooling pipeline for SIA file types (PDF, DOCX, XLSX, PPTX) with Round 1 + Round 2 fallback
+- [x] 3.14a Build transformer: maps Wider Tooling extract_file() output to Typesense document JSON schema (id, file_name, organization_id, file_type, uploaded_at, content)
+- [x] 3.15 Implement Typesense search adapter for Cmd+K queries (~60 lines)
 
 ## Phase 4 — Design Testing
 - [ ] 4.1 Verify data provider: CRUD operations against mock provider return correct data

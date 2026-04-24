@@ -7,6 +7,10 @@ import { LoginPage } from "@/pages/investor/LoginPage";
 import { DashboardPage } from "@/pages/investor/DashboardPage";
 import { lazy, Suspense } from "react";
 import { GoldSkeleton } from "@/components/investor/GoldSkeleton";
+import { PortalApp, PortalAuthenticated } from "@/portal/PortalApp";
+import { PortalLoginPage } from "@/portal/pages/LoginPage";
+import { PortalDashboardPage } from "@/portal/pages/dashboard/DashboardPage";
+import { OrganizationListPage } from "@/portal/pages/organizations/OrganizationListPage";
 
 const ChartsPage = lazy(() => import("@/pages/investor/ChartsPage").then(m => ({ default: m.ChartsPage })));
 const SalesForecastPage = lazy(() => import("@/pages/investor/SalesForecastPage").then(m => ({ default: m.SalesForecastPage })));
@@ -59,6 +63,20 @@ export const router = createBrowserRouter([
           { path: "/investor/cash-flow", element: <LazyWrapper><CashFlowPage /></LazyWrapper> },
           { path: "/investor/breakeven", element: <LazyWrapper><BreakevenPage /></LazyWrapper> },
           { path: "/investor/kpi-ratios", element: <LazyWrapper><KpiRatiosPage /></LazyWrapper> },
+        ],
+      },
+    ],
+  },
+  // SIA Portal (refine.dev)
+  {
+    element: <PortalApp />,
+    children: [
+      { path: "/portal/login", element: <PortalLoginPage /> },
+      {
+        element: <PortalAuthenticated />,
+        children: [
+          { path: "/portal", element: <PortalDashboardPage /> },
+          { path: "/portal/organizations", element: <OrganizationListPage /> },
         ],
       },
     ],
