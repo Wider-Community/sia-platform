@@ -40,8 +40,8 @@ export const noteSchema = z.object({
 });
 
 export const activityEventSchema = z.object({
-  action: z.enum(["created", "updated", "deleted"]),
-  entityType: z.enum(["organization", "contact", "file", "note"]),
+  action: z.enum(["created", "updated", "deleted", "email_sent"]),
+  entityType: z.enum(["organization", "contact", "file", "note", "task"]),
   entityId: z.string().min(1),
   entityName: z.string().optional(),
   details: z.record(z.string(), z.unknown()).optional(),
@@ -101,3 +101,42 @@ export const signerSchema = z.object({
 export type SigningRequest = z.infer<typeof signingRequestSchema> & { id: string; createdAt: string; updatedAt: string };
 export type SignatureField = z.infer<typeof signatureFieldSchema> & { id: string; createdAt: string };
 export type Signer = z.infer<typeof signerSchema> & { id: string; createdAt: string };
+
+// ── Tasks ──
+
+export const taskSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  organizationId: z.string().optional(),
+  organizationName: z.string().optional(),
+  dueDate: z.string().min(1, "Due date is required"),
+  status: z.enum(["open", "done"]),
+  priority: z.enum(["low", "medium", "high"]),
+  assignedTo: z.string().optional(),
+});
+
+export type Task = z.infer<typeof taskSchema> & { id: string; createdAt: string; updatedAt: string };
+
+// ── SLA Rules ──
+
+export const slaRuleSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  entityType: z.enum(["organization", "signing-request", "task"]),
+  thresholdDays: z.coerce.number().min(1, "Must be at least 1 day"),
+  description: z.string().optional(),
+});
+
+export type SLARule = z.infer<typeof slaRuleSchema> & { id: string; createdAt: string; updatedAt: string };
+
+// ── Alerts ──
+
+export const alertSchema = z.object({
+  type: z.enum(["overdue", "at_risk", "info"]),
+  title: z.string().min(1),
+  message: z.string().min(1),
+  entityType: z.string().optional(),
+  entityId: z.string().optional(),
+  read: z.boolean(),
+});
+
+export type Alert = z.infer<typeof alertSchema> & { id: string; createdAt: string; updatedAt: string };

@@ -1,5 +1,5 @@
 import { useOne, useList, useCreate, useDelete } from "@refinedev/core";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,9 +31,13 @@ import {
   Users,
   StickyNote,
   Download,
+  Plus,
+  Mail,
 } from "lucide-react";
 import type { BaseRecord } from "@refinedev/core";
 import { FileUploader } from "../../components/FileUploader";
+import { VerticalTimeline, type TimelineEvent } from "../../components/VerticalTimeline";
+import { EmailComposeModal } from "../../components/EmailComposeModal";
 
 export function OrganizationDetailPage() {
   const { id } = useParams();
@@ -50,6 +54,10 @@ export function OrganizationDetailPage() {
   const { mutate: createNote } = useCreate();
   const { mutate: deleteFile } = useDelete();
   const [noteText, setNoteText] = useState("");
+  const [emailOpen, setEmailOpen] = useState(false);
+
+  const primaryContact = contacts.result?.data?.[0];
+  const primaryEmail = (primaryContact?.email as string) ?? "";
 
   const handleAddNote = () => {
     if (!noteText.trim()) return;
@@ -106,9 +114,19 @@ export function OrganizationDetailPage() {
             </div>
           </div>
         </div>
-        <Button variant="outline" onClick={() => navigate(`/portal/organizations/edit/${id}`)}>
-          <Pencil className="mr-2 h-4 w-4" /> Edit
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setEmailOpen(true)}>
+            <Mail className="mr-2 h-4 w-4" /> Email
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to={`/portal/tasks/create?organizationId=${id}&organizationName=${encodeURIComponent(org.name as string)}`}>
+              <Plus className="mr-2 h-4 w-4" /> New Task
+            </Link>
+          </Button>
+          <Button variant="outline" onClick={() => navigate(`/portal/organizations/edit/${id}`)}>
+            <Pencil className="mr-2 h-4 w-4" /> Edit
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -307,27 +325,29 @@ export function OrganizationDetailPage() {
             <CardContent className="pt-6">
               {events.query.isLoading ? (
                 <Skeleton className="h-32 w-full" />
-              ) : (events.result?.data?.length ?? 0) > 0 ? (
-                <div className="space-y-3">
-                  {events.result!.data.map((e: BaseRecord) => (
-                    <div key={e.id as string} className="flex items-center gap-3 rounded-md border p-3 text-sm">
-                      <Activity className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span className="font-medium capitalize">{e.action as string}</span>
-                      <span className="text-muted-foreground">{e.entityType as string}</span>
-                      <span className="truncate">{e.entityName as string}</span>
-                      <span className="ml-auto whitespace-nowrap text-xs text-muted-foreground">
-                        {new Date(e.createdAt as string).toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
-                </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No activity yet.</p>
+                <VerticalTimeline
+                  events={(events.result?.data ?? []).map((e: BaseRecord) => ({
+                    id: e.id as string,
+                    title: `${((e.action as string) ?? "").charAt(0).toUpperCase()}${((e.action as string) ?? "").slice(1)} ${e.entityType as string}`,
+                    description: e.entityName as string,
+                    timestamp: e.createdAt as string,
+                    variant: (e.action as string) === "deleted" ? "destructive" as const : "default" as const,
+                  } satisfies TimelineEvent))}
+                />
               )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      <EmailComposeModal
+        open={emailOpen}
+        onOpenChange={setEmailOpen}
+        defaultTo={primaryEmail}
+        organizationId={id}
+        organizationName={org.name as string}
+      />
     </div>
   );
 }

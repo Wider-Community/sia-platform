@@ -23,6 +23,8 @@ import {
   LayoutDashboard,
   Building2,
   FileSignature,
+  CheckSquare,
+  Settings,
   LogOut,
   ChevronUp,
   Search,
@@ -32,6 +34,8 @@ const navItems = [
   { title: "Dashboard", path: "/portal", icon: LayoutDashboard },
   { title: "Organizations", path: "/portal/organizations", icon: Building2 },
   { title: "Documents", path: "/portal/signing", icon: FileSignature },
+  { title: "Tasks", path: "/portal/tasks", icon: CheckSquare },
+  { title: "Settings", path: "/portal/settings/sla", icon: Settings },
 ];
 
 export function PortalSidebar() {
