@@ -64,3 +64,40 @@ export type FileRecord = z.infer<typeof fileRecordSchema> & { id: string; create
 export type Note = z.infer<typeof noteSchema> & { id: string; createdAt: string };
 export type ActivityEvent = z.infer<typeof activityEventSchema> & { id: string; createdAt: string };
 export type User = z.infer<typeof userSchema> & { id: string; lastLoginAt?: string; createdAt: string; updatedAt: string };
+
+// ── Signing ──
+
+export const signingRequestSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  status: z.enum(["draft", "sent", "partially_signed", "completed", "cancelled"]),
+  pdfUrl: z.string().min(1, "PDF is required"),
+  pdfFileName: z.string().min(1),
+  message: z.string().optional(),
+  createdBy: z.string().min(1),
+  completedPdfUrl: z.string().optional(),
+});
+
+export const signatureFieldSchema = z.object({
+  signingRequestId: z.string().min(1),
+  signerId: z.string().min(1),
+  page: z.number().int().min(1),
+  xPct: z.number().min(0).max(100),
+  yPct: z.number().min(0).max(100),
+  widthPct: z.number().min(0).max(100),
+  heightPct: z.number().min(0).max(100),
+  signedImageUrl: z.string().optional(),
+});
+
+export const signerSchema = z.object({
+  signingRequestId: z.string().min(1),
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email"),
+  status: z.enum(["pending", "signed", "declined"]),
+  token: z.string().min(1),
+  signedAt: z.string().optional(),
+  color: z.string().optional(),
+});
+
+export type SigningRequest = z.infer<typeof signingRequestSchema> & { id: string; createdAt: string; updatedAt: string };
+export type SignatureField = z.infer<typeof signatureFieldSchema> & { id: string; createdAt: string };
+export type Signer = z.infer<typeof signerSchema> & { id: string; createdAt: string };

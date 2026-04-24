@@ -1,7 +1,7 @@
 import { Refine, Authenticated } from "@refinedev/core";
 import routerProvider from "@refinedev/react-router";
 import { Outlet, Navigate } from "react-router-dom";
-import { Building2 } from "lucide-react";
+import { Building2, FileSignature } from "lucide-react";
 import {
   mockDataProvider,
   mockAuthProvider,
@@ -39,6 +39,15 @@ export function PortalApp() {
           show: "/portal/organizations/:id",
           meta: { label: "Organizations", icon: <Building2 /> },
         },
+        {
+          name: "signing-requests",
+          list: "/portal/signing",
+          create: "/portal/signing/new",
+          show: "/portal/signing/:id",
+          meta: { label: "Documents", icon: <FileSignature /> },
+        },
+        { name: "signature-fields", meta: { hide: true } },
+        { name: "signers", meta: { hide: true } },
         { name: "contacts", meta: { hide: true } },
         { name: "files", meta: { hide: true } },
         { name: "notes", meta: { hide: true } },

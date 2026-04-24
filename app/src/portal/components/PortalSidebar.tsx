@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   LayoutDashboard,
   Building2,
+  FileSignature,
   LogOut,
   ChevronUp,
   Search,
@@ -30,6 +31,7 @@ import {
 const navItems = [
   { title: "Dashboard", path: "/portal", icon: LayoutDashboard },
   { title: "Organizations", path: "/portal/organizations", icon: Building2 },
+  { title: "Documents", path: "/portal/signing", icon: FileSignature },
 ];
 
 export function PortalSidebar() {

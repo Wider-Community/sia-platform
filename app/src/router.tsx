@@ -13,6 +13,10 @@ import { PortalDashboardPage } from "@/portal/pages/dashboard/DashboardPage";
 import { OrganizationListPage } from "@/portal/pages/organizations/OrganizationListPage";
 import { OrganizationFormPage } from "@/portal/pages/organizations/OrganizationFormPage";
 import { OrganizationDetailPage } from "@/portal/pages/organizations/OrganizationDetailPage";
+import { SigningListPage } from "@/portal/pages/signing/SigningListPage";
+import { NewSigningRequestPage } from "@/portal/pages/signing/NewSigningRequestPage";
+import { SigningDetailPage } from "@/portal/pages/signing/SigningDetailPage";
+import { PublicSigningPage } from "@/portal/pages/signing/PublicSigningPage";
 
 const ChartsPage = lazy(() => import("@/pages/investor/ChartsPage").then(m => ({ default: m.ChartsPage })));
 const SalesForecastPage = lazy(() => import("@/pages/investor/SalesForecastPage").then(m => ({ default: m.SalesForecastPage })));
@@ -82,8 +86,16 @@ export const router = createBrowserRouter([
           { path: "/portal/organizations/create", element: <OrganizationFormPage /> },
           { path: "/portal/organizations/edit/:id", element: <OrganizationFormPage /> },
           { path: "/portal/organizations/:id", element: <OrganizationDetailPage /> },
+          { path: "/portal/signing", element: <SigningListPage /> },
+          { path: "/portal/signing/new", element: <NewSigningRequestPage /> },
+          { path: "/portal/signing/:id", element: <SigningDetailPage /> },
         ],
       },
     ],
+  },
+  // Public signing page (no auth required)
+  {
+    path: "/sign/:token",
+    element: <PublicSigningPage />,
   },
 ]);
