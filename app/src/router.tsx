@@ -17,6 +17,9 @@ import { SigningListPage } from "@/portal/pages/signing/SigningListPage";
 import { NewSigningRequestPage } from "@/portal/pages/signing/NewSigningRequestPage";
 import { SigningDetailPage } from "@/portal/pages/signing/SigningDetailPage";
 import { PublicSigningPage } from "@/portal/pages/signing/PublicSigningPage";
+import { TaskListPage } from "@/portal/pages/tasks/TaskListPage";
+import { TaskCreatePage } from "@/portal/pages/tasks/TaskCreatePage";
+import { SlaSettingsPage } from "@/portal/pages/settings/SlaSettingsPage";
 
 const ChartsPage = lazy(() => import("@/pages/investor/ChartsPage").then(m => ({ default: m.ChartsPage })));
 const SalesForecastPage = lazy(() => import("@/pages/investor/SalesForecastPage").then(m => ({ default: m.SalesForecastPage })));
@@ -89,6 +92,9 @@ export const router = createBrowserRouter([
           { path: "/portal/signing", element: <SigningListPage /> },
           { path: "/portal/signing/new", element: <NewSigningRequestPage /> },
           { path: "/portal/signing/:id", element: <SigningDetailPage /> },
+          { path: "/portal/tasks", element: <TaskListPage /> },
+          { path: "/portal/tasks/create", element: <TaskCreatePage /> },
+          { path: "/portal/settings/sla", element: <SlaSettingsPage /> },
         ],
       },
     ],

@@ -10,6 +10,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { ThemeToggle } from "./ThemeToggle";
+import { NotificationCenter } from "./NotificationCenter";
 
 function getBreadcrumbs(pathname: string): { label: string; href?: string }[] {
   const segments = pathname.replace("/portal", "").split("/").filter(Boolean);
@@ -58,6 +59,7 @@ export function PortalHeader() {
         </BreadcrumbList>
       </Breadcrumb>
       <div className="ml-auto flex items-center gap-2">
+        <NotificationCenter />
         <ThemeToggle />
       </div>
     </header>

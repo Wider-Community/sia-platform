@@ -129,7 +129,7 @@ export const mockDataProvider: DataProvider = {
   },
 };
 
-const SKIP_LOGGING = new Set(["activity-events", "users"]);
+const SKIP_LOGGING = new Set(["activity-events", "users", "alerts", "sla-rules"]);
 
 function logActivity(action: string, resource: string, record: MockRecord) {
   if (SKIP_LOGGING.has(resource)) return;
@@ -190,6 +190,21 @@ function seed() {
     { id: "event-2", action: "created", entityType: "organization", entityId: "org-2", entityName: "Saudi Aramco Ventures", performedBy: "user-1", createdAt: "2026-02-01T10:00:00Z" },
     { id: "event-3", action: "created", entityType: "file", entityId: "file-1", entityName: "ADIA_Partnership_Agreement.pdf", performedBy: "user-1", details: { organizationId: "org-1" }, createdAt: "2026-02-10T10:00:00Z" },
     { id: "event-4", action: "updated", entityType: "organization", entityId: "org-5", entityName: "NEOM Tech & Digital", performedBy: "user-1", details: { status: { from: "active", to: "inactive" } }, createdAt: "2026-03-01T16:00:00Z" },
+  );
+
+  const tasks = getCollection("tasks");
+  tasks.push(
+    { id: "task-1", title: "Send partnership proposal to ADIA", description: "Draft and send the updated partnership terms", organizationId: "org-1", organizationName: "Abu Dhabi Investment Authority", dueDate: "2026-04-25", status: "open", priority: "high", assignedTo: "user-1", createdAt: "2026-04-20T10:00:00Z", updatedAt: "2026-04-20T10:00:00Z" },
+    { id: "task-2", title: "Review Aramco MOU feedback", description: "Review legal feedback on the MOU draft", organizationId: "org-2", organizationName: "Saudi Aramco Ventures", dueDate: "2026-04-28", status: "open", priority: "medium", assignedTo: "user-1", createdAt: "2026-04-18T10:00:00Z", updatedAt: "2026-04-18T10:00:00Z" },
+    { id: "task-3", title: "Schedule DFF innovation workshop", description: "Coordinate with Omar Khalifa for Q2 workshop", organizationId: "org-3", organizationName: "Dubai Future Foundation", dueDate: "2026-05-05", status: "open", priority: "low", assignedTo: "user-1", createdAt: "2026-04-15T10:00:00Z", updatedAt: "2026-04-15T10:00:00Z" },
+    { id: "task-4", title: "Mubadala due diligence checklist", description: "Complete the due diligence documentation", organizationId: "org-4", organizationName: "Mubadala Investment Company", dueDate: "2026-04-22", status: "done", priority: "high", assignedTo: "user-1", createdAt: "2026-04-10T10:00:00Z", updatedAt: "2026-04-22T10:00:00Z" },
+  );
+
+  const slaRules = getCollection("sla-rules");
+  slaRules.push(
+    { id: "sla-1", name: "Contact organization", entityType: "organization", thresholdDays: 14, description: "Reach out to each organization at least every 14 days", createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" },
+    { id: "sla-2", name: "Follow up signing request", entityType: "signing-request", thresholdDays: 7, description: "Follow up on pending signing requests within 7 days", createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" },
+    { id: "sla-3", name: "Complete task by due date", entityType: "task", thresholdDays: 0, description: "Tasks should be completed by their due date", createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" },
   );
 
   const users = getCollection("users");

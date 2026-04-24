@@ -1,7 +1,7 @@
 import { Refine, Authenticated } from "@refinedev/core";
 import routerProvider from "@refinedev/react-router";
 import { Outlet, Navigate } from "react-router-dom";
-import { Building2, FileSignature } from "lucide-react";
+import { Building2, FileSignature, CheckSquare, Settings } from "lucide-react";
 import {
   mockDataProvider,
   mockAuthProvider,
@@ -53,6 +53,14 @@ export function PortalApp() {
         { name: "notes", meta: { hide: true } },
         { name: "activity-events", meta: { hide: true } },
         { name: "users", meta: { hide: true } },
+        {
+          name: "tasks",
+          list: "/portal/tasks",
+          create: "/portal/tasks/create",
+          meta: { label: "Tasks", icon: <CheckSquare /> },
+        },
+        { name: "sla-rules", meta: { hide: true } },
+        { name: "alerts", meta: { hide: true } },
       ]}
       options={{
         syncWithLocation: true,
