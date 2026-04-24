@@ -41,7 +41,7 @@ export function PortalSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b px-4 py-3">
         <Link to="/portal" className="flex items-center gap-2">
-          <span className="text-lg font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <span className="text-lg font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--gold)' }}>
             SIA Portal
           </span>
         </Link>
