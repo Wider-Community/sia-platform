@@ -11,6 +11,8 @@ import { PortalApp, PortalAuthenticated } from "@/portal/PortalApp";
 import { PortalLoginPage } from "@/portal/pages/LoginPage";
 import { PortalDashboardPage } from "@/portal/pages/dashboard/DashboardPage";
 import { OrganizationListPage } from "@/portal/pages/organizations/OrganizationListPage";
+import { OrganizationFormPage } from "@/portal/pages/organizations/OrganizationFormPage";
+import { OrganizationDetailPage } from "@/portal/pages/organizations/OrganizationDetailPage";
 
 const ChartsPage = lazy(() => import("@/pages/investor/ChartsPage").then(m => ({ default: m.ChartsPage })));
 const SalesForecastPage = lazy(() => import("@/pages/investor/SalesForecastPage").then(m => ({ default: m.SalesForecastPage })));
@@ -77,6 +79,9 @@ export const router = createBrowserRouter([
         children: [
           { path: "/portal", element: <PortalDashboardPage /> },
           { path: "/portal/organizations", element: <OrganizationListPage /> },
+          { path: "/portal/organizations/create", element: <OrganizationFormPage /> },
+          { path: "/portal/organizations/edit/:id", element: <OrganizationFormPage /> },
+          { path: "/portal/organizations/:id", element: <OrganizationDetailPage /> },
         ],
       },
     ],

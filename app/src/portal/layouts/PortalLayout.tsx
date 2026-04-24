@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/sidebar";
 import { PortalSidebar } from "../components/PortalSidebar";
 import { PortalHeader } from "../components/PortalHeader";
+import { CommandPalette } from "../components/CommandPalette";
 
 export function PortalLayout() {
   return (
@@ -17,6 +18,7 @@ export function PortalLayout() {
           <Outlet />
         </main>
       </SidebarInset>
+      <CommandPalette />
       <Toaster richColors position="top-right" />
     </SidebarProvider>
   );

@@ -1,6 +1,13 @@
 import { useTable } from "@refinedev/react-table";
-import { type ColumnDef, flexRender } from "@tanstack/react-table";
-import { useMemo } from "react";
+import {
+  type ColumnDef,
+  flexRender,
+  getSortedRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getCoreRowModel,
+} from "@tanstack/react-table";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -11,8 +18,16 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Organization } from "../../schemas";
 
@@ -24,21 +39,45 @@ const statusVariant: Record<string, "default" | "secondary" | "outline"> = {
 
 export function OrganizationListPage() {
   const navigate = useNavigate();
+  const [globalFilter, setGlobalFilter] = useState("");
 
   const columns = useMemo<ColumnDef<Organization>[]>(
     () => [
-      { accessorKey: "name", header: "Name" },
-      { accessorKey: "type", header: "Type", cell: ({ getValue }) => (
-        <span className="capitalize">{getValue<string>()}</span>
-      )},
+      {
+        accessorKey: "name",
+        header: ({ column }) => (
+          <Button variant="ghost" onClick={() => column.toggleSorting()}>
+            Name <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
+      },
+      {
+        accessorKey: "type",
+        header: "Type",
+        cell: ({ getValue }) => (
+          <span className="capitalize">{getValue<string>()}</span>
+        ),
+        filterFn: "equals",
+      },
       { accessorKey: "country", header: "Country" },
-      { accessorKey: "status", header: "Status", cell: ({ getValue }) => {
-        const status = getValue<string>();
-        return <Badge variant={statusVariant[status] ?? "outline"}>{status}</Badge>;
-      }},
-      { accessorKey: "updatedAt", header: "Updated", cell: ({ getValue }) => (
-        new Date(getValue<string>()).toLocaleDateString()
-      )},
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ getValue }) => {
+          const status = getValue<string>();
+          return <Badge variant={statusVariant[status] ?? "outline"}>{status}</Badge>;
+        },
+        filterFn: "equals",
+      },
+      {
+        accessorKey: "updatedAt",
+        header: ({ column }) => (
+          <Button variant="ghost" onClick={() => column.toggleSorting()}>
+            Updated <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
+        cell: ({ getValue }) => new Date(getValue<string>()).toLocaleDateString(),
+      },
     ],
     [],
   );
@@ -50,6 +89,13 @@ export function OrganizationListPage() {
       pagination: { mode: "client", pageSize: 10 },
       sorters: { initial: [{ field: "updatedAt", order: "desc" }] },
     },
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    state: { globalFilter },
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: "includesString",
   });
 
   const isLoading = refineCore.tableQuery.isLoading;
@@ -69,6 +115,50 @@ export function OrganizationListPage() {
         </Button>
       </div>
 
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <Input
+          placeholder="Search organizations..."
+          value={globalFilter}
+          onChange={(e) => setGlobalFilter(e.target.value)}
+          className="max-w-xs"
+        />
+        <Select
+          value={(reactTable.getColumn("type")?.getFilterValue() as string) ?? "all"}
+          onValueChange={(v) =>
+            reactTable.getColumn("type")?.setFilterValue(v === "all" ? undefined : v)
+          }
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="All Types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="partner">Partner</SelectItem>
+            <SelectItem value="investor">Investor</SelectItem>
+            <SelectItem value="vendor">Vendor</SelectItem>
+            <SelectItem value="client">Client</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={(reactTable.getColumn("status")?.getFilterValue() as string) ?? "all"}
+          onValueChange={(v) =>
+            reactTable.getColumn("status")?.setFilterValue(v === "all" ? undefined : v)
+          }
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="prospect">Prospect</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Table */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -118,6 +208,35 @@ export function OrganizationListPage() {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          {reactTable.getFilteredRowModel().rows.length} organization(s)
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => reactTable.previousPage()}
+            disabled={!reactTable.getCanPreviousPage()}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm">
+            Page {reactTable.getState().pagination.pageIndex + 1} of{" "}
+            {reactTable.getPageCount()}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => reactTable.nextPage()}
+            disabled={!reactTable.getCanNextPage()}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -1,0 +1,243 @@
+import { useForm } from "@refinedev/react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate, useParams } from "react-router-dom";
+import { useFieldArray } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Plus, Trash2, ArrowLeft, Loader2 } from "lucide-react";
+
+const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  type: z.enum(["partner", "investor", "vendor", "client"]),
+  status: z.enum(["active", "inactive", "prospect"]),
+  country: z.string().optional(),
+  website: z.string().url("Invalid URL").optional().or(z.literal("")),
+  description: z.string().optional(),
+  contacts: z.array(z.object({
+    firstName: z.string().min(1, "Required"),
+    lastName: z.string().min(1, "Required"),
+    email: z.string().email("Invalid email").optional().or(z.literal("")),
+    phone: z.string().optional(),
+    role: z.string().optional(),
+  })).optional(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+export function OrganizationFormPage() {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = Boolean(id);
+
+  const {
+    refineCore: { formLoading, onFinish },
+    register,
+    handleSubmit,
+    control,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({
+    refineCoreProps: {
+      resource: "organizations",
+      action: isEdit ? "edit" : "create",
+      id,
+      redirect: "list",
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(formSchema) as any,
+    defaultValues: {
+      name: "",
+      type: "partner",
+      status: "prospect",
+      country: "",
+      website: "",
+      description: "",
+      contacts: [],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "contacts",
+  });
+
+  const typeValue = watch("type");
+  const statusValue = watch("status");
+
+  if (formLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-6">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <h1
+          className="text-3xl font-bold tracking-tight"
+          style={{ fontFamily: "'Playfair Display', serif" }}
+        >
+          {isEdit ? "Edit Organization" : "New Organization"}
+        </h1>
+      </div>
+
+      <form onSubmit={handleSubmit(onFinish)} className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name *</Label>
+              <Input id="name" {...register("name")} />
+              {errors.name && <p className="text-sm text-destructive">{String(errors.name.message)}</p>}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Type *</Label>
+                <Select value={typeValue} onValueChange={(v) => setValue("type", v as FormValues["type"])}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="partner">Partner</SelectItem>
+                    <SelectItem value="investor">Investor</SelectItem>
+                    <SelectItem value="vendor">Vendor</SelectItem>
+                    <SelectItem value="client">Client</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Status *</Label>
+                <Select value={statusValue} onValueChange={(v) => setValue("status", v as FormValues["status"])}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="prospect">Prospect</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="country">Country</Label>
+                <Input id="country" {...register("country")} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="website">Website</Label>
+                <Input id="website" type="url" placeholder="https://..." {...register("website")} />
+                {errors.website && <p className="text-sm text-destructive">{String(errors.website.message)}</p>}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea id="description" rows={3} {...register("description")} />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Contacts sub-form */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Contacts</CardTitle>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => append({ firstName: "", lastName: "", email: "", phone: "", role: "" })}
+            >
+              <Plus className="mr-2 h-4 w-4" /> Add Contact
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {fields.length === 0 && (
+              <p className="text-sm text-muted-foreground">No contacts yet.</p>
+            )}
+            {fields.map((field, idx) => (
+              <div key={field.id}>
+                {idx > 0 && <Separator className="my-4" />}
+                {(() => {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const contactErrors = (errors.contacts as any)?.[idx] as Record<string, { message?: string }> | undefined;
+                  return (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label>First Name *</Label>
+                    <Input {...register(`contacts.${idx}.firstName`)} />
+                    {contactErrors?.firstName && (
+                      <p className="text-xs text-destructive">{String(contactErrors.firstName.message ?? "")}</p>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Last Name *</Label>
+                    <Input {...register(`contacts.${idx}.lastName`)} />
+                    {contactErrors?.lastName && (
+                      <p className="text-xs text-destructive">{String(contactErrors.lastName.message ?? "")}</p>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Email</Label>
+                    <Input type="email" {...register(`contacts.${idx}.email`)} />
+                    {contactErrors?.email && (
+                      <p className="text-xs text-destructive">{String(contactErrors.email.message ?? "")}</p>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Phone</Label>
+                    <Input {...register(`contacts.${idx}.phone`)} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Role</Label>
+                    <Input {...register(`contacts.${idx}.role`)} />
+                  </div>
+                  <div className="flex items-end">
+                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(idx)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+                  );
+                })()}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-end gap-3">
+          <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEdit ? "Save Changes" : "Create Organization"}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
