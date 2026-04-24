@@ -52,7 +52,7 @@ This implementation follows a strict 5-phase methodology. Each phase MUST be com
 - [x] 4.6 Verify Zod schemas: invalid data rejected, valid data passes
 - [x] 4.7 Verify Typesense: collections created, search API returns results, typo tolerance works (requires Docker)
 - [x] 4.8 Verify ETL pipeline end-to-end: upload file to R2 → local ETL detects it → Wider Tooling extracts text → indexed in Typesense → searchable via Cmd+K (requires infrastructure)
-- [ ] 4.8a Verify ETL catch-up: simulate offline period → bring ETL back online → all pending files processed (requires R2 credentials)
+- [x] 4.8a Verify ETL catch-up: simulate offline period → bring ETL back online → all pending files processed
 - [x] 4.9 Document any design issues found and resolve before proceeding
 
 ## Phase 5 — Implementation
@@ -80,4 +80,4 @@ This implementation follows a strict 5-phase methodology. Each phase MUST be com
 - [x] 5.22 Test responsive layout on mobile/tablet
 - [x] 5.23 Add loading skeletons and error states
 - [x] 5.24 Verify keyboard navigation across tables, forms, command palette
-- [ ] 5.25 Run full end-to-end test against all Definition of Done criteria
+- [x] 5.25 Run full end-to-end test against all Definition of Done criteria
