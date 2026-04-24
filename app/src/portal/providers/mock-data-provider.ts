@@ -73,6 +73,7 @@ export const mockDataProvider: DataProvider = {
   async create({ resource, variables }) {
     const item: MockRecord = { ...(variables as MockRecord), id: (variables as MockRecord).id ?? generateId(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     getCollection(resource).push(item);
+    logActivity("created", resource, item);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return { data: item as any };
   },
@@ -82,6 +83,7 @@ export const mockDataProvider: DataProvider = {
     const idx = col.findIndex((r) => r.id === id);
     if (idx === -1) throw new Error(`${resource}/${id} not found`);
     col[idx] = { ...col[idx], ...(variables as MockRecord), updatedAt: new Date().toISOString() };
+    logActivity("updated", resource, col[idx]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return { data: col[idx] as any };
   },
@@ -91,6 +93,7 @@ export const mockDataProvider: DataProvider = {
     const idx = col.findIndex((r) => r.id === id);
     if (idx === -1) throw new Error(`${resource}/${id} not found`);
     const [deleted] = col.splice(idx, 1);
+    logActivity("deleted", resource, deleted);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return { data: deleted as any };
   },
@@ -102,6 +105,24 @@ export const mockDataProvider: DataProvider = {
     return { data: {} as any };
   },
 };
+
+const SKIP_LOGGING = new Set(["activity-events", "users"]);
+
+function logActivity(action: string, resource: string, record: MockRecord) {
+  if (SKIP_LOGGING.has(resource)) return;
+  const singular = resource.replace(/s$/, "");
+  const entityName = (record.name as string) ?? (record.firstName ? `${record.firstName} ${record.lastName}` : record.id);
+  getCollection("activity-events").unshift({
+    id: generateId(),
+    action,
+    entityType: singular,
+    entityId: record.id,
+    entityName,
+    organizationId: (record.organizationId as string) ?? (singular === "organization" ? record.id : undefined),
+    performedBy: "user-1",
+    createdAt: new Date().toISOString(),
+  });
+}
 
 // Seed data
 function seed() {
