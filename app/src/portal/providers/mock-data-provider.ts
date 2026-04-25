@@ -153,11 +153,11 @@ function seed() {
   if (orgs.length > 0) return;
 
   const seedOrgs: MockRecord[] = [
-    { id: "org-1", name: "Abu Dhabi Investment Authority", type: "investor", status: "active", country: "UAE", website: "https://adia.ae", description: "Sovereign wealth fund", tags: ["sovereign", "institutional"], createdAt: "2026-01-15T10:00:00Z", updatedAt: "2026-04-01T10:00:00Z" },
-    { id: "org-2", name: "Saudi Aramco Ventures", type: "partner", status: "active", country: "Saudi Arabia", website: "https://aramco.com", description: "Corporate venture arm", tags: ["energy", "corporate"], createdAt: "2026-02-01T10:00:00Z", updatedAt: "2026-03-15T10:00:00Z" },
-    { id: "org-3", name: "Dubai Future Foundation", type: "partner", status: "prospect", country: "UAE", website: "https://dubaifuture.gov.ae", description: "Government innovation entity", tags: ["government", "innovation"], createdAt: "2026-03-01T10:00:00Z", updatedAt: "2026-04-10T10:00:00Z" },
-    { id: "org-4", name: "Mubadala Investment Company", type: "investor", status: "active", country: "UAE", website: "https://mubadala.com", description: "Sovereign investor", tags: ["sovereign", "diversified"], createdAt: "2026-01-20T10:00:00Z", updatedAt: "2026-04-20T10:00:00Z" },
-    { id: "org-5", name: "NEOM Tech & Digital", type: "vendor", status: "inactive", country: "Saudi Arabia", website: "https://neom.com", description: "Smart city tech division", tags: ["technology", "smart-city"], createdAt: "2026-02-15T10:00:00Z", updatedAt: "2026-03-01T10:00:00Z" },
+    { id: "org-1", name: "Abu Dhabi Investment Authority", type: "investor", status: "active", stage: "negotiation", country: "UAE", website: "https://adia.ae", description: "Sovereign wealth fund", tags: ["sovereign", "institutional"], createdAt: "2026-01-15T10:00:00Z", updatedAt: "2026-04-01T10:00:00Z" },
+    { id: "org-2", name: "Saudi Aramco Ventures", type: "partner", status: "active", stage: "active_partner", country: "Saudi Arabia", website: "https://aramco.com", description: "Corporate venture arm", tags: ["energy", "corporate"], createdAt: "2026-02-01T10:00:00Z", updatedAt: "2026-03-15T10:00:00Z" },
+    { id: "org-3", name: "Dubai Future Foundation", type: "partner", status: "prospect", stage: "engaged", country: "UAE", website: "https://dubaifuture.gov.ae", description: "Government innovation entity", tags: ["government", "innovation"], createdAt: "2026-03-01T10:00:00Z", updatedAt: "2026-04-10T10:00:00Z" },
+    { id: "org-4", name: "Mubadala Investment Company", type: "investor", status: "active", stage: "due_diligence", country: "UAE", website: "https://mubadala.com", description: "Sovereign investor", tags: ["sovereign", "diversified"], createdAt: "2026-01-20T10:00:00Z", updatedAt: "2026-04-20T10:00:00Z" },
+    { id: "org-5", name: "NEOM Tech & Digital", type: "vendor", status: "inactive", stage: "inactive", country: "Saudi Arabia", website: "https://neom.com", description: "Smart city tech division", tags: ["technology", "smart-city"], createdAt: "2026-02-15T10:00:00Z", updatedAt: "2026-03-01T10:00:00Z" },
   ];
   orgs.push(...seedOrgs);
 

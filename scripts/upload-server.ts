@@ -1,6 +1,6 @@
 /**
  * Lightweight upload API — receives files from the portal and stores them in R2.
- * Also serves as a download proxy for R2 files.
+ * Supports multi-tenant folder structure: {userId}/organizations/{orgId}-{slug}/files/
  *
  * Usage: npx tsx --env-file=../.env scripts/upload-server.ts
  */
@@ -8,7 +8,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
-import { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command, CopyObjectCommand } from "@aws-sdk/client-s3";
 
 const PORT = Number(process.env.UPLOAD_SERVER_PORT ?? 4000);
 
@@ -27,7 +27,11 @@ const app = new Hono();
 
 app.use("/*", cors({ origin: "*" }));
 
-// Upload: POST /upload?orgId=org-4&fileName=report.pdf
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+// Upload: POST /upload?orgId=org-4&orgName=Mubadala&fileName=report.pdf&userId=user-1&path=contracts
 app.post("/upload", async (c) => {
   const orgId = c.req.query("orgId");
   const fileName = c.req.query("fileName");
@@ -35,8 +39,17 @@ app.post("/upload", async (c) => {
     return c.json({ error: "orgId and fileName query params required" }, 400);
   }
 
+  const userId = c.req.query("userId") ?? "user-1";
+  const orgName = c.req.query("orgName") ?? orgId;
+  const subPath = c.req.query("path") ?? "";
+
+  const orgSlug = `${orgId}-${slugify(orgName)}`;
+  const segments = [userId, "organizations", orgSlug];
+  if (subPath) segments.push(...subPath.split("/").filter(Boolean));
+  segments.push(fileName);
+
+  const key = segments.join("/");
   const body = await c.req.arrayBuffer();
-  const key = `orgs/${orgId}/${fileName}`;
 
   await s3.send(new PutObjectCommand({
     Bucket: BUCKET,
@@ -48,7 +61,43 @@ app.post("/upload", async (c) => {
   return c.json({ key, size: body.byteLength });
 });
 
-// Download: GET /download?key=orgs/org-4/report.pdf
+// Upload to user's personal folders: POST /upload/user?userId=user-1&folder=templates&fileName=nda.pdf
+app.post("/upload/user", async (c) => {
+  const userId = c.req.query("userId") ?? "user-1";
+  const folder = c.req.query("folder") ?? "profile";
+  const fileName = c.req.query("fileName");
+  if (!fileName) return c.json({ error: "fileName query param required" }, 400);
+
+  const key = `${userId}/${folder}/${fileName}`;
+  const body = await c.req.arrayBuffer();
+
+  await s3.send(new PutObjectCommand({
+    Bucket: BUCKET,
+    Key: key,
+    Body: new Uint8Array(body),
+    ContentType: c.req.header("content-type") ?? "application/octet-stream",
+  }));
+
+  return c.json({ key, size: body.byteLength });
+});
+
+// Copy file to a stage folder (for signing versioning)
+// POST /copy?sourceKey=...&destKey=...
+app.post("/copy", async (c) => {
+  const sourceKey = c.req.query("sourceKey");
+  const destKey = c.req.query("destKey");
+  if (!sourceKey || !destKey) return c.json({ error: "sourceKey and destKey required" }, 400);
+
+  await s3.send(new CopyObjectCommand({
+    Bucket: BUCKET,
+    CopySource: `${BUCKET}/${sourceKey}`,
+    Key: destKey,
+  }));
+
+  return c.json({ sourceKey, destKey });
+});
+
+// Download: GET /download?key=user-1/organizations/org-4-mubadala/report.pdf
 app.get("/download", async (c) => {
   const key = c.req.query("key");
   if (!key) return c.json({ error: "key query param required" }, 400);
@@ -65,7 +114,39 @@ app.get("/download", async (c) => {
   return c.body(buffer);
 });
 
-// List files for an org: GET /files?orgId=org-4
+// Browse: GET /browse?prefix=user-1/organizations/org-4-mubadala/
+// Returns files and subfolders at a given level
+app.get("/browse", async (c) => {
+  const prefix = c.req.query("prefix") ?? "";
+  const normalizedPrefix = prefix.endsWith("/") || prefix === "" ? prefix : `${prefix}/`;
+
+  const resp = await s3.send(new ListObjectsV2Command({
+    Bucket: BUCKET,
+    Prefix: normalizedPrefix,
+    Delimiter: "/",
+  }));
+
+  const folders = (resp.CommonPrefixes ?? []).map((p) => ({
+    name: p.Prefix?.replace(normalizedPrefix, "").replace(/\/$/, "") ?? "",
+    prefix: p.Prefix,
+    type: "folder" as const,
+  }));
+
+  const files = (resp.Contents ?? [])
+    .filter((obj) => obj.Key !== normalizedPrefix)
+    .map((obj) => ({
+      key: obj.Key,
+      name: obj.Key?.replace(normalizedPrefix, "") ?? "",
+      size: obj.Size,
+      lastModified: obj.LastModified?.toISOString(),
+      type: "file" as const,
+    }));
+
+  return c.json({ prefix: normalizedPrefix, folders, files });
+});
+
+// Legacy: List files for an org (backwards compatible)
+// GET /files?orgId=org-4
 app.get("/files", async (c) => {
   const orgId = c.req.query("orgId");
   const prefix = orgId ? `orgs/${orgId}/` : "orgs/";
@@ -79,6 +160,22 @@ app.get("/files", async (c) => {
   }));
 
   return c.json({ files });
+});
+
+// Create folder: POST /folder?path=user-1/organizations/org-4-mubadala/contracts
+app.post("/folder", async (c) => {
+  const path = c.req.query("path");
+  if (!path) return c.json({ error: "path query param required" }, 400);
+
+  const key = path.endsWith("/") ? path : `${path}/`;
+  await s3.send(new PutObjectCommand({
+    Bucket: BUCKET,
+    Key: key,
+    Body: new Uint8Array(0),
+    ContentType: "application/x-directory",
+  }));
+
+  return c.json({ folder: key });
 });
 
 app.get("/health", (c) => c.json({ ok: true }));

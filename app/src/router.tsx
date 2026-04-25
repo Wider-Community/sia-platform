@@ -13,6 +13,9 @@ import { PortalDashboardPage } from "@/portal/pages/dashboard/DashboardPage";
 import { OrganizationListPage } from "@/portal/pages/organizations/OrganizationListPage";
 import { OrganizationFormPage } from "@/portal/pages/organizations/OrganizationFormPage";
 import { OrganizationDetailPage } from "@/portal/pages/organizations/OrganizationDetailPage";
+import { ContactListPage } from "@/portal/pages/contacts/ContactListPage";
+import { ContactFormPage } from "@/portal/pages/contacts/ContactFormPage";
+import { ContactDetailPage } from "@/portal/pages/contacts/ContactDetailPage";
 import { SigningListPage } from "@/portal/pages/signing/SigningListPage";
 import { NewSigningRequestPage } from "@/portal/pages/signing/NewSigningRequestPage";
 import { SigningDetailPage } from "@/portal/pages/signing/SigningDetailPage";
@@ -20,6 +23,8 @@ import { PublicSigningPage } from "@/portal/pages/signing/PublicSigningPage";
 import { TaskListPage } from "@/portal/pages/tasks/TaskListPage";
 import { TaskCreatePage } from "@/portal/pages/tasks/TaskCreatePage";
 import { SlaSettingsPage } from "@/portal/pages/settings/SlaSettingsPage";
+import { PipelinePage } from "@/portal/pages/pipeline/PipelinePage";
+import { MapPage } from "@/portal/pages/map/MapPage";
 
 const ChartsPage = lazy(() => import("@/pages/investor/ChartsPage").then(m => ({ default: m.ChartsPage })));
 const SalesForecastPage = lazy(() => import("@/pages/investor/SalesForecastPage").then(m => ({ default: m.SalesForecastPage })));
@@ -89,6 +94,12 @@ export const router = createBrowserRouter([
           { path: "/portal/organizations/create", element: <OrganizationFormPage /> },
           { path: "/portal/organizations/edit/:id", element: <OrganizationFormPage /> },
           { path: "/portal/organizations/:id", element: <OrganizationDetailPage /> },
+          { path: "/portal/contacts", element: <ContactListPage /> },
+          { path: "/portal/contacts/create", element: <ContactFormPage /> },
+          { path: "/portal/contacts/edit/:id", element: <ContactFormPage /> },
+          { path: "/portal/contacts/:id", element: <ContactDetailPage /> },
+          { path: "/portal/map", element: <MapPage /> },
+          { path: "/portal/pipeline", element: <PipelinePage /> },
           { path: "/portal/signing", element: <SigningListPage /> },
           { path: "/portal/signing/new", element: <NewSigningRequestPage /> },
           { path: "/portal/signing/:id", element: <SigningDetailPage /> },
