@@ -23,7 +23,7 @@
     "PDF · 2.4MB": "PDF · ٢٫٤ ميغابايت",
 
     // HERO
-    "SAUDI INTEGRATION ALLIANCE — ": "تحالف التكامل السعودي — ",
+    "STRATEGIC INTEGRATION AGENCY — ": "وكالة التكامل الاستراتيجي — ",
     "corridor live": "الممرّ مفعّل",
     "Two": "نظامان",
     "ecosystems.": "بيئيّان.",
@@ -212,7 +212,7 @@
     "Download integration framework (PDF)": "حمّل إطار التكامل (PDF)",
 
     // FOOTER (catch-all common items)
-    "© 2025 Saudi Integration Alliance. All access pre-cleared.": "© ٢٠٢٥ تحالف التكامل السعودي. جميع نقاط الوصول مُجازة مسبقًا.",
+    "© 2025 Strategic Integration Agency. All access pre-cleared.": "© ٢٠٢٥ وكالة التكامل الاستراتيجي. جميع نقاط الوصول مُجازة مسبقًا.",
     "Built across Riyadh · Kuala Lumpur · Cairo": "صُنع عبر الرياض · كوالالمبور · القاهرة",
     "Status": "الحالة",
     "Operational across all three jurisdictions": "تشغيلي في جميع الولايات القضائية الثلاث",
@@ -263,7 +263,7 @@
     "Integration framework (PDF)": "إطار التكامل (PDF)",
     "Saudi Embassy KL": "السفارة السعودية في كوالالمبور",
     "CORRIDOR LIVE": "الممرّ مفعّل",
-    "SAUDI INTEGRATION ALLIANCE": "تحالف التكامل السعودي",
+    "STRATEGIC INTEGRATION AGENCY": "وكالة التكامل الاستراتيجي",
     "The integration corridor between Saudi Arabia, Malaysia, and Egypt. Capital, infrastructure, and operators — already cleared at ministerial, MDEC, and embassy level.": "ممرّ التكامل بين المملكة العربية السعودية وماليزيا ومصر. رأس المال، والبنية التحتية، والمشغّلون — تمّت الموافقة المسبقة على المستوى الوزاري، وMDEC، ومستوى السفارة.",
 
     // Small UI bits
