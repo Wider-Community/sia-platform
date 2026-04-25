@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AnimatedButton } from "../../components/AnimatedButton";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -27,10 +28,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, ArrowUpDown, ChevronLeft, ChevronRight, Building2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import type { Organization } from "../../schemas";
 import { PageShell } from "../../components/PageShell";
+import { EmptyState } from "../../components/EmptyState";
 import { PageHeader } from "../../components/PageHeader";
 
 const statusVariant: Record<string, "default" | "secondary" | "outline"> = {
@@ -107,10 +110,10 @@ export function OrganizationListPage() {
       <PageHeader
         title="Organizations"
         actions={
-          <Button onClick={() => navigate("/portal/organizations/create")}>
+          <AnimatedButton onClick={() => navigate("/portal/organizations/create")}>
             <Plus className="mr-2 h-4 w-4" />
             New Organization
-          </Button>
+          </AnimatedButton>
         }
       />
 
@@ -185,23 +188,33 @@ export function OrganizationListPage() {
                 </TableRow>
               ))
             ) : reactTable.getRowModel().rows.length ? (
-              reactTable.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="cursor-pointer"
-                  onClick={() => navigate(`/portal/organizations/${row.original.id}`)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              <AnimatePresence>
+                {reactTable.getRowModel().rows.map((row, index) => (
+                  <motion.tr
+                    key={row.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, delay: index * 0.03 }}
+                    className="cursor-pointer border-b transition-colors hover:bg-muted/50"
+                    onClick={() => navigate(`/portal/organizations/${row.original.id}`)}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No organizations found.
+                <TableCell colSpan={columns.length}>
+                  <EmptyState
+                    icon={Building2}
+                    title="No organizations yet"
+                    description="Create your first organization to get started."
+                    action={{ label: "Create first organization", onClick: () => navigate("/portal/organizations/create") }}
+                  />
                 </TableCell>
               </TableRow>
             )}

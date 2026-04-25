@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useList, useUpdate } from "@refinedev/core";
-import { Bell } from "lucide-react";
+import { Bell, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -10,6 +11,7 @@ import type { BaseRecord } from "@refinedev/core";
 
 export function NotificationCenter() {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   const { result: alertsResult, query: alertsQuery } = useList({
     resource: "alerts",
@@ -41,6 +43,8 @@ export function NotificationCenter() {
       message: a.message as string,
       read: a.read as boolean,
       createdAt: a.createdAt as string,
+      entityId: (a.entityId as string) ?? undefined,
+      entityType: (a.entityType as string) ?? undefined,
     }));
 
     const dynamic = slaAlerts.map((a, i) => ({
@@ -50,6 +54,8 @@ export function NotificationCenter() {
       message: a.message,
       read: false,
       createdAt: new Date().toISOString(),
+      entityId: a.entityId,
+      entityType: a.entityType,
     }));
 
     const storedIds = new Set(stored.map((s) => s.title));
@@ -59,13 +65,22 @@ export function NotificationCenter() {
 
   const unreadCount = allAlerts.filter((a) => !a.read).length;
 
-  const markAsRead = (alert: typeof allAlerts[number]) => {
-    if (alert.id.startsWith("sla-") || alert.read) return;
-    updateAlert({
-      resource: "alerts",
-      id: alert.id,
-      values: { read: true },
-    });
+  const handleAlertClick = (alert: typeof allAlerts[number]) => {
+    if (!alert.id.startsWith("sla-") && !alert.read) {
+      updateAlert({
+        resource: "alerts",
+        id: alert.id,
+        values: { read: true },
+      });
+    }
+
+    if (alert.entityId) {
+      if (alert.entityType === "organization") {
+        navigate(`/portal/organizations/${alert.entityId}`);
+      }
+    }
+
+    setOpen(false);
   };
 
   const typeColor: Record<string, string> = {
@@ -107,7 +122,7 @@ export function NotificationCenter() {
                 <button
                   key={alert.id}
                   className={`w-full px-4 py-3 text-left hover:bg-muted/50 transition-colors ${alert.read ? "opacity-60" : ""}`}
-                  onClick={() => markAsRead(alert)}
+                  onClick={() => handleAlertClick(alert)}
                 >
                   <div className="flex items-start gap-2">
                     <div className={`mt-1 h-2 w-2 shrink-0 rounded-full ${typeColor[alert.type] ?? "bg-muted-foreground"}`} />
@@ -115,6 +130,9 @@ export function NotificationCenter() {
                       <p className="text-sm font-medium leading-tight">{alert.title}</p>
                       <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{alert.message}</p>
                     </div>
+                    {alert.entityId && (
+                      <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
+                    )}
                   </div>
                 </button>
               ))}

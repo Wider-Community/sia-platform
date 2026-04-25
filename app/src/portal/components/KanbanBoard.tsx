@@ -9,7 +9,9 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
+import { motion, LayoutGroup } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
+import { AnimatedCounter } from "@/components/effects/AnimatedCounter";
 
 export interface KanbanColumn<T> {
   id: string;
@@ -46,7 +48,7 @@ function DroppableColumn<T extends { id: string }>({
       >
         <span className="text-sm font-semibold text-white">{column.title}</span>
         <span className="text-xs font-medium text-white/80 bg-white/20 rounded-full px-2 py-0.5">
-          {column.items.length}
+          <AnimatedCounter value={column.items.length} duration={0.6} className="text-xs" />
         </span>
       </div>
       <div className="flex flex-col gap-2 p-2 min-h-[120px] overflow-y-auto max-h-[calc(100vh-240px)]">
@@ -77,15 +79,17 @@ function DraggableCard<T extends { id: string }>({
     : undefined;
 
   return (
-    <div
+    <motion.div
       ref={setNodeRef}
       style={style}
+      layout
+      transition={{ type: "spring", stiffness: 350, damping: 25 }}
       {...listeners}
       {...attributes}
       className={`cursor-grab active:cursor-grabbing ${isDragging ? "opacity-50" : ""}`}
     >
       {renderCard(item)}
-    </div>
+    </motion.div>
   );
 }
 
@@ -124,11 +128,13 @@ export function KanbanBoard<T extends { id: string }>({
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <LayoutGroup>
       <div className="flex gap-4 overflow-x-auto pb-4">
         {columns.map((column) => (
           <DroppableColumn key={column.id} column={column} renderCard={renderCard} />
         ))}
       </div>
+      </LayoutGroup>
       <DragOverlay>
         {activeItem ? <div className="rotate-2 opacity-90">{renderCard(activeItem)}</div> : null}
       </DragOverlay>

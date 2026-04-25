@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useList } from "@refinedev/core";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -27,7 +28,24 @@ import { KpiCard } from "../../components/KpiCard";
 import { VerticalTimeline, type TimelineEvent } from "../../components/VerticalTimeline";
 import { PageShell } from "../../components/PageShell";
 import { PageHeader } from "../../components/PageHeader";
+import { TextReveal } from "@/components/effects/TextReveal";
+import { BorderBeam } from "@/components/effects/BorderBeam";
+import { Marquee } from "@/components/effects/Marquee";
 import { evaluateSLA, type SLAResult } from "../../lib/sla-engine";
+
+const staggerContainer = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const staggerItem = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+};
 
 export function PortalDashboardPage() {
   const navigate = useNavigate();
@@ -127,6 +145,17 @@ export function PortalDashboardPage() {
     variant: (e.action as string) === "deleted" ? "destructive" as const : "default" as const,
   }));
 
+  // Activity ticker items for marquee
+  const tickerItems = eventData.slice(0, 12).map((e: BaseRecord) => (
+    <span
+      key={e.id as string}
+      className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-3 py-1 text-xs text-muted-foreground"
+    >
+      <span className="font-medium text-foreground">{capitalize(e.action as string)}</span>
+      {e.entityName as string}
+    </span>
+  ));
+
   const slaBadge = (status?: string) => {
     if (status === "overdue") return <Badge className="bg-red-500 hover:bg-red-600 text-white">Overdue</Badge>;
     if (status === "at_risk") return <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white">At Risk</Badge>;
@@ -137,162 +166,223 @@ export function PortalDashboardPage() {
     <PageShell loading={isLoading}>
       <PageHeader title="Operations Dashboard" />
 
+      {/* Activity ticker */}
+      {tickerItems.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6 }}
+        >
+          <Marquee speed={30} pauseOnHover className="py-2">
+            {tickerItems}
+          </Marquee>
+        </motion.div>
+      )}
+
       {/* Row 1: KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <KpiCard
-          title="Total Organizations"
-          value={totalOrgs}
-          icon={Building2}
-          loading={orgs.query.isLoading}
-        />
-        <KpiCard
-          title="Active Signing Requests"
-          value={activeSigningRequests}
-          icon={FileSignature}
-          loading={signingRequests.query.isLoading}
-        />
-        <KpiCard
-          title="Overdue Items"
-          value={overdueCount}
-          icon={AlertTriangle}
-          loading={isLoading}
-        />
-        <KpiCard
-          title="Tasks Due Today"
-          value={tasksDueToday}
-          icon={CheckSquare}
-          loading={tasks.query.isLoading}
-        />
-      </div>
+      <motion.div
+        className="grid gap-4 md:grid-cols-4"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div variants={staggerItem}>
+          <KpiCard
+            title="Total Organizations"
+            value={totalOrgs}
+            icon={Building2}
+            loading={orgs.query.isLoading}
+            onClick={() => navigate("/portal/organizations")}
+          />
+        </motion.div>
+        <motion.div variants={staggerItem}>
+          <KpiCard
+            title="Active Signing Requests"
+            value={activeSigningRequests}
+            icon={FileSignature}
+            loading={signingRequests.query.isLoading}
+            onClick={() => navigate("/portal/signing")}
+          />
+        </motion.div>
+        <motion.div variants={staggerItem}>
+          <KpiCard
+            title="Overdue Items"
+            value={overdueCount}
+            icon={AlertTriangle}
+            loading={isLoading}
+            onClick={() => navigate("/portal/organizations")}
+          />
+        </motion.div>
+        <motion.div variants={staggerItem}>
+          <KpiCard
+            title="Tasks Due Today"
+            value={tasksDueToday}
+            icon={CheckSquare}
+            loading={tasks.query.isLoading}
+            onClick={() => navigate("/portal/tasks")}
+          />
+        </motion.div>
+      </motion.div>
 
       {/* Row 2: Priority Queue */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Priority Queue</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
-              ))}
-            </div>
-          ) : priorityQueue.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Organization</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>SLA Status</TableHead>
-                  <TableHead>Days Since Activity</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {priorityQueue.map((item) => (
-                  <TableRow
-                    key={item.id}
-                    className="cursor-pointer"
-                    onClick={() => navigate(`/portal/organizations/${item.id}`)}
-                  >
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="capitalize">{item.status}</Badge>
-                    </TableCell>
-                    <TableCell>{slaBadge(item.sla?.status)}</TableCell>
-                    <TableCell>{item.sla?.daysSinceActivity ?? "—"}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <p className="text-sm text-muted-foreground">No organizations to display.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Row 3: Tasks + Activity side by side */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+      >
+        <Card className="relative overflow-hidden">
+          <BorderBeam duration={20} />
           <CardHeader>
-            <CardTitle className="text-lg">Open Tasks</CardTitle>
+            <CardTitle className="text-lg">
+              <TextReveal text="Priority Queue" delay={0.3} />
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {tasks.query.isLoading ? (
-              <Skeleton className="h-32 w-full" />
-            ) : recentTasks.length > 0 ? (
-              <div className="space-y-2">
-                {recentTasks.map((task: BaseRecord) => (
-                  <div
-                    key={task.id as string}
-                    className="flex items-center justify-between rounded-md border p-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{task.title as string}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Due: {new Date(task.dueDate as string).toLocaleDateString()}
-                        {task.organizationName && ` · ${task.organizationName}`}
-                      </p>
-                    </div>
-                    <Badge
-                      variant={
-                        (task.priority as string) === "high"
-                          ? "destructive"
-                          : (task.priority as string) === "medium"
-                            ? "default"
-                            : "secondary"
-                      }
-                    >
-                      {task.priority as string}
-                    </Badge>
-                  </div>
+            {isLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
                 ))}
               </div>
+            ) : priorityQueue.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Organization</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>SLA Status</TableHead>
+                    <TableHead>Days Since Activity</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {priorityQueue.map((item) => (
+                    <TableRow
+                      key={item.id}
+                      className="cursor-pointer transition-colors hover:bg-muted/50"
+                      onClick={() => navigate(`/portal/organizations/${item.id}`)}
+                    >
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">{item.status}</Badge>
+                      </TableCell>
+                      <TableCell>{slaBadge(item.sla?.status)}</TableCell>
+                      <TableCell>{item.sla?.daysSinceActivity ?? "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             ) : (
-              <p className="text-sm text-muted-foreground">No open tasks.</p>
+              <p className="text-sm text-muted-foreground">No organizations to display.</p>
             )}
           </CardContent>
         </Card>
+      </motion.div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {events.query.isLoading ? (
-              <Skeleton className="h-32 w-full" />
-            ) : (
-              <VerticalTimeline events={timelineEvents} />
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Row 3: Tasks + Activity side by side */}
+      <motion.div
+        className="grid gap-4 md:grid-cols-2"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div variants={staggerItem}>
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="text-lg">
+                <TextReveal text="Open Tasks" delay={0.5} />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {tasks.query.isLoading ? (
+                <Skeleton className="h-32 w-full" />
+              ) : recentTasks.length > 0 ? (
+                <div className="space-y-2">
+                  {recentTasks.map((task: BaseRecord) => (
+                    <div
+                      key={task.id as string}
+                      className="flex items-center justify-between rounded-md border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => navigate("/portal/tasks")}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{task.title as string}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Due: {new Date(task.dueDate as string).toLocaleDateString()}
+                          {task.organizationName && ` · ${task.organizationName}`}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={
+                          (task.priority as string) === "high"
+                            ? "destructive"
+                            : (task.priority as string) === "medium"
+                              ? "default"
+                              : "secondary"
+                        }
+                      >
+                        {task.priority as string}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No open tasks.</p>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div variants={staggerItem}>
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="text-lg">
+                <TextReveal text="Recent Activity" delay={0.6} />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {events.query.isLoading ? (
+                <Skeleton className="h-32 w-full" />
+              ) : (
+                <VerticalTimeline events={timelineEvents} />
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
 
       {/* Activity Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Activity by Week</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weeklyActivity}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="week" className="text-xs" />
-                <YAxis className="text-xs" allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                    color: "hsl(var(--foreground))",
-                  }}
-                />
-                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.6 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">
+              <TextReveal text="Activity by Week" delay={0.7} />
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={weeklyActivity}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="week" className="text-xs" />
+                  <YAxis className="text-xs" allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                      color: "hsl(var(--foreground))",
+                    }}
+                  />
+                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     </PageShell>
   );
 }

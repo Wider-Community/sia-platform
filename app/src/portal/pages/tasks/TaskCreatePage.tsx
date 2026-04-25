@@ -4,9 +4,12 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useList } from "@refinedev/core";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { AnimatedButton } from "../../components/AnimatedButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { AnimatedInput } from "../../components/AnimatedInput";
+import { AnimatedTextarea } from "../../components/AnimatedTextarea";
 import {
   Select,
   SelectContent,
@@ -89,7 +92,7 @@ export function TaskCreatePage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">Title *</Label>
-              <Input id="title" {...register("title")} />
+              <AnimatedInput id="title" error={!!errors.title} {...register("title")} />
               {errors.title && (
                 <p className="text-sm text-destructive">{String(errors.title.message)}</p>
               )}
@@ -97,7 +100,7 @@ export function TaskCreatePage() {
 
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea id="description" rows={3} {...register("description")} />
+              <AnimatedTextarea id="description" rows={3} {...register("description")} />
             </div>
 
             <div className="space-y-2">
@@ -147,10 +150,9 @@ export function TaskCreatePage() {
           <Button type="button" variant="outline" onClick={() => navigate(-1)}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <AnimatedButton type="submit" loading={isSubmitting}>
             Create Task
-          </Button>
+          </AnimatedButton>
         </div>
       </form>
     </div>

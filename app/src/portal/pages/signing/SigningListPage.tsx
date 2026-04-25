@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AnimatedButton } from "../../components/AnimatedButton";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -27,10 +28,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, ArrowUpDown, ChevronLeft, ChevronRight, FileSignature } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { PageShell } from "../../components/PageShell";
 import { PageHeader } from "../../components/PageHeader";
+import { EmptyState } from "../../components/EmptyState";
 import type { SigningRequest } from "../../schemas";
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
@@ -127,10 +130,10 @@ export function SigningListPage() {
       <PageHeader
         title="Documents"
         actions={
-          <Button onClick={() => navigate("/portal/signing/new")}>
+          <AnimatedButton onClick={() => navigate("/portal/signing/new")}>
             <Plus className="mr-2 h-4 w-4" />
             New Signing Request
-          </Button>
+          </AnimatedButton>
         }
       />
 
@@ -196,31 +199,38 @@ export function SigningListPage() {
                 </TableRow>
               ))
             ) : reactTable.getRowModel().rows.length ? (
-              reactTable.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="cursor-pointer"
-                  onClick={() =>
-                    navigate(`/portal/signing/${row.original.id}`)
-                  }
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              <AnimatePresence>
+                {reactTable.getRowModel().rows.map((row, index) => (
+                  <motion.tr
+                    key={row.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, delay: index * 0.03 }}
+                    className="cursor-pointer border-b transition-colors hover:bg-muted/50"
+                    onClick={() =>
+                      navigate(`/portal/signing/${row.original.id}`)
+                    }
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No signing requests found.
+                <TableCell colSpan={columns.length}>
+                  <EmptyState
+                    icon={FileSignature}
+                    title="No signing requests yet"
+                    description="Create your first signing request to collect signatures."
+                    action={{ label: "New Signing Request", onClick: () => navigate("/portal/signing/new") }}
+                  />
                 </TableCell>
               </TableRow>
             )}

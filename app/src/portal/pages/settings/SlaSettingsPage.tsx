@@ -167,7 +167,7 @@ export function SlaSettingsPage() {
                     );
                   }
                   return (
-                    <TableRow key={rule.id as string}>
+                    <TableRow key={rule.id as string} className="transition-colors hover:bg-muted/50">
                       <TableCell className="font-medium">{rule.name as string}</TableCell>
                       <TableCell className="capitalize">{(rule.entityType as string).replace("-", " ")}</TableCell>
                       <TableCell>{rule.thresholdDays as number}</TableCell>

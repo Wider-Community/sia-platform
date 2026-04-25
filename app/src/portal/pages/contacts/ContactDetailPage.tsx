@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useOne } from "@refinedev/core";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnimatedTabContent } from "../../components/AnimatedTabContent";
 import { Badge } from "@/components/ui/badge";
 import { Pencil } from "lucide-react";
 import { PageShell } from "../../components/PageShell";
@@ -11,6 +13,7 @@ import { PageHeader } from "../../components/PageHeader";
 export function ContactDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("overview");
 
   const { query: contactQuery } = useOne({ resource: "contacts", id: id! });
   const contact = contactQuery.data?.data;
@@ -52,13 +55,13 @@ export function ContactDetailPage() {
         }
       />
 
-      <Tabs defaultValue="overview">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview">
+        <AnimatedTabContent activeValue={activeTab} value="overview">
           <Card>
             <CardContent className="pt-6">
               <dl className="grid gap-4 sm:grid-cols-2">
@@ -92,15 +95,15 @@ export function ContactDetailPage() {
               </dl>
             </CardContent>
           </Card>
-        </TabsContent>
+        </AnimatedTabContent>
 
-        <TabsContent value="activity">
+        <AnimatedTabContent activeValue={activeTab} value="activity">
           <Card>
             <CardContent className="pt-6">
               <p className="text-sm text-muted-foreground">Activity timeline coming soon.</p>
             </CardContent>
           </Card>
-        </TabsContent>
+        </AnimatedTabContent>
       </Tabs>
     </PageShell>
   );

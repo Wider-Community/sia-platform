@@ -12,11 +12,11 @@ export function PortalLayout() {
   return (
     <SidebarProvider>
       <PortalSidebar />
-      <SidebarInset>
+      <SidebarInset className="min-h-svh overflow-hidden">
         <PortalHeader />
-        <main className="flex-1 overflow-auto p-4 md:p-6">
+        <div className="flex-1 overflow-auto">
           <Outlet />
-        </main>
+        </div>
       </SidebarInset>
       <CommandPalette />
       <Toaster richColors position="top-right" />

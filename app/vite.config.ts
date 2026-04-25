@@ -20,6 +20,12 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
+      "/mujarrad-api": {
+        target: "https://mujarrad.onrender.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/mujarrad-api/, "/api"),
+        secure: true,
+      },
     },
   },
 });

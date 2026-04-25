@@ -5,7 +5,9 @@ import { PageHeader } from "../../components/PageHeader";
 import { KanbanBoard, type KanbanColumn } from "@/portal/components/KanbanBoard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { motion } from "framer-motion";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnimatedTabContent } from "../../components/AnimatedTabContent";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,20 +68,26 @@ function formatDate(dateStr: string): string {
 
 function OrgCard({ org }: { org: Organization }) {
   return (
-    <Card className="shadow-sm">
-      <CardContent className="p-3 space-y-2">
-        <div className="font-medium text-sm leading-tight">{org.name}</div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-[10px] capitalize">
-            {org.type}
-          </Badge>
-          <span className="text-xs text-muted-foreground">{org.country}</span>
-        </div>
-        <div className="text-[10px] text-muted-foreground">
-          Updated {formatDate(org.updatedAt)}
-        </div>
-      </CardContent>
-    </Card>
+    <motion.div
+      layout
+      whileHover={{ scale: 1.03, y: -2 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+    >
+      <Card className="shadow-sm transition-shadow duration-200 hover:shadow-md">
+        <CardContent className="p-3 space-y-2">
+          <div className="font-medium text-sm leading-tight">{org.name}</div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-[10px] capitalize">
+              {org.type}
+            </Badge>
+            <span className="text-xs text-muted-foreground">{org.country}</span>
+          </div>
+          <div className="text-[10px] text-muted-foreground">
+            Updated {formatDate(org.updatedAt)}
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 
@@ -90,6 +98,7 @@ export function PipelinePage() {
   });
   const { mutate: updateOrg } = useUpdate();
 
+  const [activeTab, setActiveTab] = useState("board");
   const [pendingMove, setPendingMove] = useState<{
     itemId: string;
     fromColumn: string;
@@ -126,13 +135,13 @@ export function PipelinePage() {
     <PageShell>
       <PageHeader title="Pipeline" />
 
-      <Tabs defaultValue="board">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="board">Board</TabsTrigger>
           <TabsTrigger value="list">List</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="board" className="mt-4">
+        <AnimatedTabContent activeValue={activeTab} value="board" className="mt-4">
           {isLoading ? (
             <div className="text-sm text-muted-foreground">Loading...</div>
           ) : (
@@ -142,9 +151,9 @@ export function PipelinePage() {
               renderCard={(org) => <OrgCard org={org} />}
             />
           )}
-        </TabsContent>
+        </AnimatedTabContent>
 
-        <TabsContent value="list" className="mt-4">
+        <AnimatedTabContent activeValue={activeTab} value="list" className="mt-4">
           <div className="rounded-md border">
             <Table>
               <TableHeader>
@@ -160,7 +169,7 @@ export function PipelinePage() {
                 {orgs.map((org) => {
                   const stage = PIPELINE_STAGES.find((s) => s.id === getStage(org));
                   return (
-                    <TableRow key={org.id}>
+                    <TableRow key={org.id} className="transition-colors hover:bg-muted/50">
                       <TableCell className="font-medium">{org.name}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">
@@ -184,7 +193,7 @@ export function PipelinePage() {
               </TableBody>
             </Table>
           </div>
-        </TabsContent>
+        </AnimatedTabContent>
       </Tabs>
 
       <AlertDialog open={!!pendingMove} onOpenChange={(open) => !open && setPendingMove(null)}>

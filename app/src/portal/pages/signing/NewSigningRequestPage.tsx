@@ -3,9 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { useCreate } from "@refinedev/core";
 import { DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { Button } from "@/components/ui/button";
+import { AnimatedButton } from "../../components/AnimatedButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { AnimatedInput } from "../../components/AnimatedInput";
+import { AnimatedTextarea } from "../../components/AnimatedTextarea";
 import {
   Card,
   CardContent,
@@ -300,7 +303,7 @@ export function NewSigningRequestPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">Document Title *</Label>
-              <Input
+              <AnimatedInput
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -309,7 +312,7 @@ export function NewSigningRequestPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="message">Message to Signers</Label>
-              <Textarea
+              <AnimatedTextarea
                 id="message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -345,12 +348,12 @@ export function NewSigningRequestPage() {
               )}
             </div>
             <div className="flex justify-end">
-              <Button
+              <AnimatedButton
                 onClick={() => setStep(2)}
                 disabled={!canProceedStep1}
               >
                 Next <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              </AnimatedButton>
             </div>
           </CardContent>
         </Card>
@@ -390,12 +393,12 @@ export function NewSigningRequestPage() {
               <Button variant="outline" onClick={() => setStep(1)}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back
               </Button>
-              <Button
+              <AnimatedButton
                 onClick={() => setStep(3)}
                 disabled={!canProceedStep2}
               >
                 Next <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              </AnimatedButton>
             </div>
           </CardContent>
         </Card>
@@ -487,12 +490,12 @@ export function NewSigningRequestPage() {
               <Button variant="outline" onClick={() => setStep(2)}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back
               </Button>
-              <Button
+              <AnimatedButton
                 onClick={() => setStep(4)}
                 disabled={!canProceedStep3}
               >
                 Next <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              </AnimatedButton>
             </div>
           </CardContent>
         </Card>
@@ -555,12 +558,9 @@ export function NewSigningRequestPage() {
               <Button variant="outline" onClick={() => setStep(3)}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back
               </Button>
-              <Button onClick={handleSubmit} disabled={submitting}>
-                {submitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+              <AnimatedButton onClick={handleSubmit} loading={submitting}>
                 Send for Signing
-              </Button>
+              </AnimatedButton>
             </div>
           </CardContent>
         </Card>

@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { Button } from "@/components/ui/button";
+import { AnimatedButton } from "./AnimatedButton";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -148,7 +149,7 @@ export function SignatureCapture({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleConfirm}>Apply Signature</Button>
+          <AnimatedButton onClick={handleConfirm}>Apply Signature</AnimatedButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -9,6 +9,7 @@ import {
   i18nProvider,
 } from "../../providers";
 import { Button } from "@/components/ui/button";
+import { AnimatedButton } from "../../components/AnimatedButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -274,15 +275,13 @@ function PublicSigningPageInner() {
               {Object.keys(signedFields).length}/{myFields.length} fields
               signed
             </Badge>
-            <Button
+            <AnimatedButton
               onClick={handleSubmit}
-              disabled={!allMyFieldsSigned || submitting}
+              disabled={!allMyFieldsSigned}
+              loading={submitting}
             >
-              {submitting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
               Submit Signatures
-            </Button>
+            </AnimatedButton>
           </div>
         </div>
       </header>

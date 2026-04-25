@@ -50,6 +50,17 @@ module.exports = {
           light: "rgb(232 232 232 / <alpha-value>)",
         },
         navy: "rgb(26 26 28 / <alpha-value>)",
+        // Sidebar (shadcn sidebar component)
+        sidebar: {
+          DEFAULT: "hsl(var(--sidebar-background))",
+          foreground: "hsl(var(--sidebar-foreground))",
+          primary: "hsl(var(--sidebar-primary))",
+          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
+          accent: "hsl(var(--sidebar-accent))",
+          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
+          border: "hsl(var(--sidebar-border))",
+          ring: "hsl(var(--sidebar-ring))",
+        },
         // Investor portal semantic colors
         success: "#1D9E75",
         danger: "#E24B4A",

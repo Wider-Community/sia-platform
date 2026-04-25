@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AnimatedButton } from "../../components/AnimatedButton";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -27,10 +28,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, ArrowUpDown, ChevronLeft, ChevronRight, CheckSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { PageShell } from "../../components/PageShell";
 import { PageHeader } from "../../components/PageHeader";
+import { EmptyState } from "../../components/EmptyState";
 import { useUpdate } from "@refinedev/core";
 import type { Task } from "../../schemas";
 
@@ -93,7 +96,7 @@ export function TaskListPage() {
           const task = row.original;
           if (task.status === "done") return null;
           return (
-            <Button
+            <AnimatedButton
               variant="ghost"
               size="sm"
               onClick={(e) => {
@@ -106,7 +109,7 @@ export function TaskListPage() {
               }}
             >
               Mark Done
-            </Button>
+            </AnimatedButton>
           );
         },
       },
@@ -137,10 +140,10 @@ export function TaskListPage() {
       <PageHeader
         title="Tasks"
         actions={
-          <Button onClick={() => navigate("/portal/tasks/create")}>
+          <AnimatedButton onClick={() => navigate("/portal/tasks/create")}>
             <Plus className="mr-2 h-4 w-4" />
             New Task
-          </Button>
+          </AnimatedButton>
         }
       />
 
@@ -195,19 +198,32 @@ export function TaskListPage() {
                 </TableRow>
               ))
             ) : reactTable.getRowModel().rows.length ? (
-              reactTable.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              <AnimatePresence>
+                {reactTable.getRowModel().rows.map((row, index) => (
+                  <motion.tr
+                    key={row.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, delay: index * 0.03 }}
+                    className="border-b transition-colors hover:bg-muted/50"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No tasks found.
+                <TableCell colSpan={columns.length}>
+                  <EmptyState
+                    icon={CheckSquare}
+                    title="No tasks yet"
+                    description="Create your first task to track work."
+                    action={{ label: "Create first task", onClick: () => navigate("/portal/tasks/create") }}
+                  />
                 </TableCell>
               </TableRow>
             )}

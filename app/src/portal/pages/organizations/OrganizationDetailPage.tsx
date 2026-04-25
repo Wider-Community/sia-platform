@@ -1,13 +1,17 @@
 import { useOne, useList, useCreate, useDelete } from "@refinedev/core";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
+import { AnimatedTabContent } from "../../components/AnimatedTabContent";
 import { Button } from "@/components/ui/button";
+import { AnimatedButton } from "../../components/AnimatedButton";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "../../components/EmptyState";
+import { TableSkeleton } from "../../components/TableSkeleton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,6 +60,7 @@ export function OrganizationDetailPage() {
   const { mutate: createNote } = useCreate();
   const { mutate: deleteFile } = useDelete();
   const [noteText, setNoteText] = useState("");
+  const [activeTab, setActiveTab] = useState("overview");
   const [emailOpen, setEmailOpen] = useState(false);
 
   const primaryContact = contacts.result?.data?.[0];
@@ -70,7 +75,11 @@ export function OrganizationDetailPage() {
     setNoteText("");
   };
 
-  if (!org && !orgQuery.isLoading) {
+  if (orgQuery.isLoading) {
+    return <PageShell loading={true}>{null}</PageShell>;
+  }
+
+  if (!org) {
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-4">
         <p className="text-muted-foreground">Organization not found</p>
@@ -111,7 +120,7 @@ export function OrganizationDetailPage() {
       />
 
       {/* Tabs */}
-      <Tabs defaultValue="overview">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="contacts">
@@ -129,7 +138,7 @@ export function OrganizationDetailPage() {
         </TabsList>
 
         {/* Overview */}
-        <TabsContent value="overview">
+        <AnimatedTabContent activeValue={activeTab} value="overview">
           <Card>
             <CardContent className="pt-6">
               <dl className="grid gap-4 sm:grid-cols-2">
@@ -164,14 +173,14 @@ export function OrganizationDetailPage() {
               </dl>
             </CardContent>
           </Card>
-        </TabsContent>
+        </AnimatedTabContent>
 
         {/* Contacts */}
-        <TabsContent value="contacts">
+        <AnimatedTabContent activeValue={activeTab} value="contacts">
           <Card>
             <CardContent className="pt-6">
               {contacts.query.isLoading ? (
-                <Skeleton className="h-32 w-full" />
+                <TableSkeleton rows={3} columns={4} />
               ) : (contacts.result?.data?.length ?? 0) > 0 ? (
                 <Table>
                   <TableHeader>
@@ -194,19 +203,19 @@ export function OrganizationDetailPage() {
                   </TableBody>
                 </Table>
               ) : (
-                <p className="text-sm text-muted-foreground">No contacts yet.</p>
+                <EmptyState icon={Users} title="No contacts yet" description="Add a contact to this organization." />
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </AnimatedTabContent>
 
         {/* Files */}
-        <TabsContent value="files">
+        <AnimatedTabContent activeValue={activeTab} value="files">
           <Card>
             <CardContent className="pt-6 space-y-4">
               <FileUploader organizationId={id!} onUploadComplete={() => files.query.refetch()} />
               {files.query.isLoading ? (
-                <Skeleton className="h-32 w-full" />
+                <TableSkeleton rows={3} columns={5} />
               ) : (files.result?.data?.length ?? 0) > 0 ? (
                 <Table>
                   <TableHeader>
@@ -272,14 +281,14 @@ export function OrganizationDetailPage() {
                   </TableBody>
                 </Table>
               ) : (
-                <p className="text-sm text-muted-foreground">No files yet.</p>
+                <EmptyState icon={FileText} title="No files yet" description="Upload a file to this organization." />
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </AnimatedTabContent>
 
         {/* Notes */}
-        <TabsContent value="notes">
+        <AnimatedTabContent activeValue={activeTab} value="notes">
           <Card>
             <CardContent className="pt-6 space-y-4">
               <div className="flex gap-2">
@@ -290,9 +299,9 @@ export function OrganizationDetailPage() {
                   rows={2}
                   className="flex-1"
                 />
-                <Button onClick={handleAddNote} disabled={!noteText.trim()} className="self-end">
+                <AnimatedButton onClick={handleAddNote} disabled={!noteText.trim()} className="self-end">
                   <Send className="mr-2 h-4 w-4" /> Add
-                </Button>
+                </AnimatedButton>
               </div>
               {notes.query.isLoading ? (
                 <Skeleton className="h-32 w-full" />
@@ -308,14 +317,14 @@ export function OrganizationDetailPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No notes yet.</p>
+                <EmptyState icon={StickyNote} title="No notes yet" description="Add a note to keep track of important details." />
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </AnimatedTabContent>
 
         {/* Activity */}
-        <TabsContent value="activity">
+        <AnimatedTabContent activeValue={activeTab} value="activity">
           <Card>
             <CardContent className="pt-6">
               {events.query.isLoading ? (
@@ -333,7 +342,7 @@ export function OrganizationDetailPage() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </AnimatedTabContent>
       </Tabs>
 
       <EmailComposeModal

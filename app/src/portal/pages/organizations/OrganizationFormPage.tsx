@@ -4,9 +4,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { AnimatedButton } from "../../components/AnimatedButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { AnimatedInput } from "../../components/AnimatedInput";
+import { AnimatedTextarea } from "../../components/AnimatedTextarea";
 import {
   Select,
   SelectContent,
@@ -100,7 +103,7 @@ export function OrganizationFormPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Name *</Label>
-              <Input id="name" {...register("name")} />
+              <AnimatedInput id="name" error={!!errors.name} {...register("name")} />
               {errors.name && <p className="text-sm text-destructive">{String(errors.name.message)}</p>}
             </div>
 
@@ -137,14 +140,14 @@ export function OrganizationFormPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="website">Website</Label>
-                <Input id="website" type="url" placeholder="https://..." {...register("website")} />
+                <AnimatedInput id="website" type="url" placeholder="https://..." error={!!errors.website} {...register("website")} />
                 {errors.website && <p className="text-sm text-destructive">{String(errors.website.message)}</p>}
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea id="description" rows={3} {...register("description")} />
+              <AnimatedTextarea id="description" rows={3} {...register("description")} />
             </div>
           </CardContent>
         </Card>
@@ -220,10 +223,9 @@ export function OrganizationFormPage() {
           <Button type="button" variant="outline" onClick={() => navigate(-1)}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <AnimatedButton type="submit" loading={isSubmitting}>
             {isEdit ? "Save Changes" : "Create Organization"}
-          </Button>
+          </AnimatedButton>
         </div>
       </form>
       </div>

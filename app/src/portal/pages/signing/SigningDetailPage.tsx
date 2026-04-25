@@ -1,10 +1,13 @@
 import { useOne, useList, useUpdate } from "@refinedev/core";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { AnimatedButton } from "../../components/AnimatedButton";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnimatedTabContent } from "../../components/AnimatedTabContent";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "../../components/EmptyState";
 import {
   CheckCircle2,
   Clock,
@@ -12,6 +15,7 @@ import {
   Link as LinkIcon,
   RefreshCw,
   Send,
+  Users,
   XCircle,
 } from "lucide-react";
 import { PageShell } from "../../components/PageShell";
@@ -51,6 +55,7 @@ export function SigningDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
+  const [activeTab, setActiveTab] = useState("signers");
 
   const { query: reqQuery } = useOne({
     resource: "signing-requests",
@@ -179,21 +184,21 @@ export function SigningDetailPage() {
               Download PDF
             </Button>
             {(status === "sent" || status === "partially_signed") && (
-              <Button variant="destructive" onClick={handleCancel}>
+              <AnimatedButton variant="destructive" onClick={handleCancel}>
                 Cancel Request
-              </Button>
+              </AnimatedButton>
             )}
           </div>
         }
       />
 
-      <Tabs defaultValue="signers">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="signers">Signers</TabsTrigger>
           <TabsTrigger value="document">Document</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="signers">
+        <AnimatedTabContent activeValue={activeTab} value="signers">
           <Card>
             <CardHeader>
               <CardTitle>Signer Progress</CardTitle>
@@ -279,9 +284,7 @@ export function SigningDetailPage() {
                   );
                 })
               ) : (
-                <p className="text-sm text-muted-foreground">
-                  No signers yet.
-                </p>
+                <EmptyState icon={Users} title="No signers yet" description="Add signers to this signing request." />
               )}
 
               <Button
@@ -298,9 +301,9 @@ export function SigningDetailPage() {
               </Button>
             </CardContent>
           </Card>
-        </TabsContent>
+        </AnimatedTabContent>
 
-        <TabsContent value="document">
+        <AnimatedTabContent activeValue={activeTab} value="document">
           <Card>
             <CardContent className="pt-6">
               {req.pdfUrl && (
@@ -321,7 +324,7 @@ export function SigningDetailPage() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </AnimatedTabContent>
       </Tabs>
     </PageShell>
   );

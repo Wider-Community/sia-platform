@@ -12,10 +12,10 @@ import { mujarradDataProvider } from "./providers/mujarrad-data-provider";
 import { authProvider as mujarradAuthProvider } from "./providers/auth-provider";
 import { PortalLayout } from "./layouts/PortalLayout";
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK !== "false";
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
 const dataProvider = USE_MOCK ? mockDataProvider : mujarradDataProvider;
-const authProviderInstance = USE_MOCK ? mockAuthProvider : mujarradAuthProvider;
+const authProviderInstance = mockAuthProvider;
 
 export function PortalApp() {
   return (

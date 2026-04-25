@@ -6,9 +6,13 @@ import { PageHeader } from "../../components/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { AnimatedButton } from "../../components/AnimatedButton";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Plus } from "lucide-react";
+import { Plus, Users } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { EmptyState } from "../../components/EmptyState";
 import type { BaseRecord } from "@refinedev/core";
 
 export function ContactListPage() {
@@ -49,10 +53,10 @@ export function ContactListPage() {
       <PageHeader
         title="Contacts"
         actions={
-          <Button onClick={() => navigate("/portal/contacts/create")}>
+          <AnimatedButton onClick={() => navigate("/portal/contacts/create")}>
             <Plus className="mr-2 h-4 w-4" />
             New Contact
-          </Button>
+          </AnimatedButton>
         }
       />
 
@@ -77,45 +81,59 @@ export function ContactListPage() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : filtered.length > 0 ? (
-                filtered.map((c: BaseRecord) => (
-                  <TableRow
-                    key={c.id as string}
-                    className="cursor-pointer"
-                    onClick={() => navigate(`/portal/contacts/${c.id}`)}
-                  >
-                    <TableCell className="font-medium">
-                      {c.firstName as string} {c.lastName as string}
-                    </TableCell>
-                    <TableCell>{(c.email as string) || "—"}</TableCell>
-                    <TableCell>{(c.phone as string) || "—"}</TableCell>
-                    <TableCell>
-                      {c.role ? <Badge variant="secondary">{c.role as string}</Badge> : "—"}
-                    </TableCell>
-                    <TableCell>
-                      {c.organizationId ? (
-                        <Link
-                          to={`/portal/organizations/${c.organizationId}`}
-                          className="text-primary hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {orgMap.get(c.organizationId as string) ?? (c.organizationId as string)}
-                        </Link>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: 5 }).map((_, j) => (
+                      <TableCell key={j}>
+                        <Skeleton className="h-5 w-full" />
+                      </TableCell>
+                    ))}
                   </TableRow>
                 ))
+              ) : filtered.length > 0 ? (
+                <AnimatePresence>
+                  {filtered.map((c: BaseRecord, index: number) => (
+                    <motion.tr
+                      key={c.id as string}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, delay: index * 0.03 }}
+                      className="cursor-pointer border-b transition-colors hover:bg-muted/50"
+                      onClick={() => navigate(`/portal/contacts/${c.id}`)}
+                    >
+                      <TableCell className="font-medium">
+                        {c.firstName as string} {c.lastName as string}
+                      </TableCell>
+                      <TableCell>{(c.email as string) || "—"}</TableCell>
+                      <TableCell>{(c.phone as string) || "—"}</TableCell>
+                      <TableCell>
+                        {c.role ? <Badge variant="secondary">{c.role as string}</Badge> : "—"}
+                      </TableCell>
+                      <TableCell>
+                        {c.organizationId ? (
+                          <Link
+                            to={`/portal/organizations/${c.organizationId}`}
+                            className="text-primary hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {orgMap.get(c.organizationId as string) ?? (c.organizationId as string)}
+                          </Link>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                    </motion.tr>
+                  ))}
+                </AnimatePresence>
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    No contacts found.
+                  <TableCell colSpan={5}>
+                    <EmptyState
+                      icon={Users}
+                      title="No contacts yet"
+                      description="Add your first contact to get started."
+                      action={{ label: "New Contact", onClick: () => navigate("/portal/contacts/create") }}
+                    />
                   </TableCell>
                 </TableRow>
               )}

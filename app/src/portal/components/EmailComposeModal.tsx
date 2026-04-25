@@ -8,6 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { AnimatedButton } from "./AnimatedButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -106,10 +107,10 @@ export function EmailComposeModal({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSend} disabled={!to || !subject || sending}>
-            {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+          <AnimatedButton onClick={handleSend} disabled={!to || !subject} loading={sending}>
+            <Send className="mr-2 h-4 w-4" />
             Send
-          </Button>
+          </AnimatedButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

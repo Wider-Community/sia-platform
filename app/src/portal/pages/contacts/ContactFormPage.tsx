@@ -5,8 +5,10 @@ import { useCreate, useUpdate, useOne, useList } from "@refinedev/core";
 import { z } from "zod";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { AnimatedButton } from "../../components/AnimatedButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AnimatedInput } from "../../components/AnimatedInput";
 import {
   Select,
   SelectContent,
@@ -121,14 +123,14 @@ export function ContactFormPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name *</Label>
-                <Input id="firstName" {...register("firstName")} />
+                <AnimatedInput id="firstName" error={!!errors.firstName} {...register("firstName")} />
                 {errors.firstName && (
                   <p className="text-sm text-destructive">{errors.firstName.message}</p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last Name *</Label>
-                <Input id="lastName" {...register("lastName")} />
+                <AnimatedInput id="lastName" error={!!errors.lastName} {...register("lastName")} />
                 {errors.lastName && (
                   <p className="text-sm text-destructive">{errors.lastName.message}</p>
                 )}
@@ -138,7 +140,7 @@ export function ContactFormPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" {...register("email")} />
+                <AnimatedInput id="email" type="email" error={!!errors.email} {...register("email")} />
                 {errors.email && (
                   <p className="text-sm text-destructive">{errors.email.message}</p>
                 )}
@@ -181,10 +183,9 @@ export function ContactFormPage() {
           <Button type="button" variant="outline" onClick={() => navigate(-1)}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSaving}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <AnimatedButton type="submit" loading={isSaving}>
             {isEdit ? "Save Changes" : "Create Contact"}
-          </Button>
+          </AnimatedButton>
         </div>
       </form>
     </div>

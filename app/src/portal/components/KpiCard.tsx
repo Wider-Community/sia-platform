@@ -2,6 +2,8 @@ import type { LucideIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import { SpotlightCard } from "@/components/effects/SpotlightCard";
+import { AnimatedCounter } from "@/components/effects/AnimatedCounter";
 
 interface KpiCardProps {
   title: string;
@@ -9,34 +11,46 @@ interface KpiCardProps {
   icon: LucideIcon;
   loading?: boolean;
   trend?: { value: number; label: string };
+  onClick?: () => void;
 }
 
-export function KpiCard({ title, value, icon: Icon, loading, trend }: KpiCardProps) {
+export function KpiCard({ title, value, icon: Icon, loading, trend, onClick }: KpiCardProps) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <Skeleton className="h-8 w-20" />
-        ) : (
-          <>
-            <div className="text-2xl font-bold">{value}</div>
-            {trend && (
-              <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                {trend.value >= 0 ? (
-                  <TrendingUp className="h-3 w-3 text-green-500" />
+    <SpotlightCard
+      className={`rounded-xl border-border bg-card p-0${onClick ? " cursor-pointer" : ""}`}
+      onClick={onClick}
+    >
+      <Card className="border-0 bg-transparent shadow-none">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          <Icon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <Skeleton className="h-8 w-20" />
+          ) : (
+            <>
+              <div className="text-2xl font-bold">
+                {typeof value === "number" ? (
+                  <AnimatedCounter value={value} duration={1.5} />
                 ) : (
-                  <TrendingDown className="h-3 w-3 text-red-500" />
+                  value
                 )}
-                {trend.label}
-              </p>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+              </div>
+              {trend && (
+                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                  {trend.value >= 0 ? (
+                    <TrendingUp className="h-3 w-3 text-green-500" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3 text-red-500" />
+                  )}
+                  {trend.label}
+                </p>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </SpotlightCard>
   );
 }
