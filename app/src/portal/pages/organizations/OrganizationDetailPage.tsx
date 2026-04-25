@@ -246,7 +246,21 @@ export function OrganizationDetailPage() {
                         <TableCell>{new Date(f.createdAt as string).toLocaleDateString()}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" title="Download">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Download"
+                              onClick={() => {
+                                const key = f.r2ObjectKey as string;
+                                if (key) {
+                                  const url = `/api/download?key=${encodeURIComponent(key)}`;
+                                  const a = document.createElement("a");
+                                  a.href = url;
+                                  a.download = f.name as string;
+                                  a.click();
+                                }
+                              }}
+                            >
                               <Download className="h-4 w-4" />
                             </Button>
                             <AlertDialog>

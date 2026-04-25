@@ -22,17 +22,23 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   LayoutDashboard,
   Building2,
+  Kanban,
+  Users,
   FileSignature,
   CheckSquare,
   Settings,
   LogOut,
   ChevronUp,
   Search,
+  Map as MapIcon,
 } from "lucide-react";
 
 const navItems = [
   { title: "Dashboard", path: "/portal", icon: LayoutDashboard },
   { title: "Organizations", path: "/portal/organizations", icon: Building2 },
+  { title: "Contacts", path: "/portal/contacts", icon: Users },
+  { title: "Map", path: "/portal/map", icon: MapIcon },
+  { title: "Pipeline", path: "/portal/pipeline", icon: Kanban },
   { title: "Documents", path: "/portal/signing", icon: FileSignature },
   { title: "Tasks", path: "/portal/tasks", icon: CheckSquare },
   { title: "Settings", path: "/portal/settings/sla", icon: Settings },
