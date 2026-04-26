@@ -1,6 +1,6 @@
 import type { AuthProvider } from "@refinedev/core";
 
-const API_URL = import.meta.env.VITE_MUJARRAD_API_URL ?? "https://mujarrad.onrender.com/api";
+const API_URL = import.meta.env.VITE_MUJARRAD_API_URL ?? "/mujarrad-api";
 const TOKEN_KEY = "sia_token";
 const USER_KEY = "sia_user";
 

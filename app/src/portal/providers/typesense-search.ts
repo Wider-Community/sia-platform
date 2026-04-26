@@ -78,7 +78,7 @@ export async function searchAll(query: string): Promise<SearchResult[]> {
       id: doc.id as string,
       type: "organization",
       title: doc.name as string,
-      subtitle: `${doc.type} · ${doc.country ?? ""}`.trim(),
+      subtitle: `${doc.type}`,
       href: `/portal/organizations/${doc.id}`,
     });
   }

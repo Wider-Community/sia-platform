@@ -83,7 +83,7 @@ export function CommandPalette() {
         id: org.id as string,
         type: "organization",
         title: org.name as string,
-        subtitle: `${(org.type as string) ?? ""} · ${(org.country as string) ?? ""}`,
+        subtitle: `${(org.type as string) ?? ""} · ${((org as Record<string, unknown>).locations as Array<{ city: string; countryName: string; isDefault: boolean }> | undefined)?.find((l) => l.isDefault)?.countryName ?? ""}`,
         href: `/portal/organizations/${org.id}`,
       });
     }

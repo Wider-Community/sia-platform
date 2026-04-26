@@ -33,7 +33,7 @@ interface Organization {
   type: string;
   status: string;
   stage?: string;
-  country: string;
+  locations?: Array<{ city: string; countryName: string; isDefault: boolean }>;
   updatedAt: string;
   [key: string]: unknown;
 }
@@ -80,7 +80,7 @@ function OrgCard({ org }: { org: Organization }) {
             <Badge variant="outline" className="text-[10px] capitalize">
               {org.type}
             </Badge>
-            <span className="text-xs text-muted-foreground">{org.country}</span>
+            <span className="text-xs text-muted-foreground">{org.locations?.find((l) => l.isDefault)?.countryName ?? ""}</span>
           </div>
           <div className="text-[10px] text-muted-foreground">
             Updated {formatDate(org.updatedAt)}
@@ -176,7 +176,7 @@ export function PipelinePage() {
                           {org.type}
                         </Badge>
                       </TableCell>
-                      <TableCell>{org.country}</TableCell>
+                      <TableCell>{org.locations?.find((l) => l.isDefault)?.countryName ?? "—"}</TableCell>
                       <TableCell>
                         <Badge
                           style={{ backgroundColor: stage?.color, color: "white", borderColor: "transparent" }}

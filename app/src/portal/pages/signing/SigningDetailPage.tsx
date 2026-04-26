@@ -80,6 +80,22 @@ export function SigningDetailPage() {
   });
 
   const { mutate: updateRequest } = useUpdate();
+  const { mutate: updateSigner } = useUpdate();
+
+  const handleResend = async (signer: BaseRecord) => {
+    const newToken = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    updateSigner({
+      resource: "signers",
+      id: signer.id as string,
+      values: { token: newToken, expiresAt },
+    }, {
+      onSuccess: () => {
+        const link = `${appUrl}/sign/${newToken}`;
+        navigator.clipboard.writeText(link);
+      },
+    });
+  };
 
   const signersList = (signersResult.data?.data ?? []) as BaseRecord[];
   const fieldsList = (fieldsResult.data?.data ?? []) as BaseRecord[];
@@ -268,6 +284,7 @@ export function SigningDetailPage() {
                             variant="ghost"
                             size="icon"
                             title="Resend"
+                            onClick={() => handleResend(signer)}
                           >
                             <Send className="h-4 w-4" />
                           </Button>

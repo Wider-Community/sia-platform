@@ -51,7 +51,7 @@
 - [x] 3.8 Implement normalization in control layer: spread nodeDetails + inject id, createdAt, updatedAt, createdBy, modifiedBy from node envelope
 - [x] 3.9 Implement listing: listNodes + filter by _resourceType (getDescendants unusable — hierarchy-only, not attribute-based). Client-side filters, sorting (numeric-aware), pagination
 - [x] 3.10 Rewrite `mujarrad-data-provider.ts` as thin Refine adapter (~75 lines) delegating to EntityControlLayer
-- [ ] 3.11 Update `schemas.ts`: restructure Zod schemas — keep for form validation, remove FK fields from nodeDetails storage schemas
+- [x] 3.11 Update `schemas.ts`: restructure Zod schemas — keep for form validation, remove FK fields from nodeDetails storage schemas
 
 ## Phase 4 — Design Testing
 - [x] 4.1 Test MujarradClient against live API: verified in Phase 1 research (node CRUD, attribute create/list all confirmed working)

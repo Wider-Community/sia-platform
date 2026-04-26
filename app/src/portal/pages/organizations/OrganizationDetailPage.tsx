@@ -143,8 +143,20 @@ export function OrganizationDetailPage() {
             <CardContent className="pt-6">
               <dl className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <dt className="text-sm font-medium text-muted-foreground">Country</dt>
-                  <dd className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {(org.country as string) || "—"}</dd>
+                  <dt className="text-sm font-medium text-muted-foreground">Locations</dt>
+                  <dd>
+                    {((org as any).locations as Array<{ city: string; countryName: string; isDefault: boolean }> | undefined)?.length ? (
+                      <ul className="space-y-1">
+                        {((org as any).locations as Array<{ city: string; countryName: string; isDefault: boolean }>).map((loc, i) => (
+                          <li key={i} className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {loc.city}, {loc.countryName}
+                            {loc.isDefault && <Badge variant="outline" className="ml-1 text-xs">Default</Badge>}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : "—"}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-muted-foreground">Website</dt>

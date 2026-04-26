@@ -64,7 +64,16 @@ export function OrganizationListPage() {
         ),
         filterFn: "equals",
       },
-      { accessorKey: "country", header: "Country" },
+      {
+        id: "location",
+        header: "Location",
+        cell: ({ row }) => {
+          const locations = (row.original as any).locations as Array<{ city: string; countryName: string; isDefault: boolean }> | undefined;
+          const defaultLoc = locations?.find((l) => l.isDefault) ?? locations?.[0];
+          if (!defaultLoc) return "—";
+          return `${defaultLoc.city}, ${defaultLoc.countryName}`;
+        },
+      },
       {
         accessorKey: "status",
         header: "Status",

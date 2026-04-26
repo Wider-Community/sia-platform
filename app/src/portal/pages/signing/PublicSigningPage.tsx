@@ -8,12 +8,25 @@ import {
   notificationProvider,
   i18nProvider,
 } from "../../providers";
+import { mujarradDataProvider } from "../../providers/mujarrad-data-provider";
 import { Button } from "@/components/ui/button";
 import { AnimatedButton } from "../../components/AnimatedButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, FileSignature, Loader2 } from "lucide-react";
+import { CheckCircle2, Clock, FileSignature, Loader2, XCircle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { PdfViewer } from "../../components/PdfViewer";
 import {
   SignatureFieldOverlay,
@@ -30,6 +43,8 @@ function PublicSigningPageInner() {
   const [signedFields, setSignedFields] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [declineOpen, setDeclineOpen] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
 
   // Find signer by token
   const signersQuery = useList({
@@ -191,6 +206,23 @@ function PublicSigningPageInner() {
     }
   };
 
+  const handleDecline = async () => {
+    if (!signer) return;
+    setSubmitting(true);
+    try {
+      await updateSigner({
+        resource: "signers",
+        id: signer.id as string,
+        values: { status: "declined", declineReason },
+      });
+      setCompleted(true);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const isExpired = signer?.expiresAt && new Date(signer.expiresAt as string) < new Date();
+
   const isLoading =
     signersQuery.isLoading || requestQuery.isLoading || fieldsQuery.isLoading;
 
@@ -217,21 +249,40 @@ function PublicSigningPageInner() {
     );
   }
 
-  if (signer.status === "signed" || completed) {
+  if (isExpired) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center">
+            <Clock className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+            <p className="text-lg font-medium">This signing link has expired</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Please contact the administrator to receive a new signing link.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (signer.status === "signed" || signer.status === "declined" || completed) {
+    const isDeclined = signer.status === "declined";
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center gap-4 pt-6 text-center">
-            <CheckCircle2 className="h-16 w-16 text-green-600" />
-            <h2
-              className="text-2xl font-bold"
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
-              Thank you!
+            {isDeclined ? (
+              <XCircle className="h-16 w-16 text-destructive" />
+            ) : (
+              <CheckCircle2 className="h-16 w-16 text-green-600" />
+            )}
+            <h2 className="text-2xl font-bold" style={{ fontFamily: "'Playfair Display', serif" }}>
+              {isDeclined ? "Request Declined" : "Thank you!"}
             </h2>
             <p className="text-muted-foreground">
-              Your signature has been recorded for "{request.title as string}".
-              You may close this page.
+              {isDeclined
+                ? `You have declined to sign "${request.title as string}". The admin has been notified.`
+                : `Your signature has been recorded for "${request.title as string}". You may close this page.`}
             </p>
           </CardContent>
         </Card>
@@ -282,6 +333,29 @@ function PublicSigningPageInner() {
             >
               Submit Signatures
             </AnimatedButton>
+            <AlertDialog open={declineOpen} onOpenChange={setDeclineOpen}>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm">Decline</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Decline signing request?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. The request admin will be notified.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <Textarea
+                  placeholder="Reason for declining (optional)"
+                  value={declineReason}
+                  onChange={(e) => setDeclineReason(e.target.value)}
+                  rows={3}
+                />
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDecline}>Decline</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </header>
@@ -332,12 +406,14 @@ function PublicSigningPageInner() {
   );
 }
 
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
+
 // Wrap in Refine so hooks work outside PortalApp
 export function PublicSigningPage() {
   return (
     <Refine
       routerProvider={routerProvider}
-      dataProvider={mockDataProvider}
+      dataProvider={USE_MOCK ? mockDataProvider : mujarradDataProvider}
       notificationProvider={notificationProvider}
       i18nProvider={i18nProvider}
       resources={[

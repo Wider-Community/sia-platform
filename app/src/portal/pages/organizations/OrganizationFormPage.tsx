@@ -27,12 +27,22 @@ import { Separator } from "@/components/ui/separator";
 import { Plus, Trash2, Loader2 } from "lucide-react";
 import { PageShell } from "../../components/PageShell";
 import { PageHeader } from "../../components/PageHeader";
+import { LocationEditor } from "../../components/LocationEditor";
+import type { OrgLocation } from "../../components/LocationEditor";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   type: z.enum(["partner", "investor", "vendor", "client"]),
   status: z.enum(["active", "inactive", "prospect"]),
-  country: z.string().optional(),
+  locations: z.array(z.object({
+    id: z.string(),
+    country: z.string().min(1),
+    countryName: z.string().min(1),
+    city: z.string().min(1),
+    lat: z.number(),
+    lng: z.number(),
+    isDefault: z.boolean(),
+  })).min(1, "At least one location is required"),
   website: z.string().url("Invalid URL").optional().or(z.literal("")),
   description: z.string().optional(),
   contacts: z.array(z.object({
@@ -72,7 +82,7 @@ export function OrganizationFormPage() {
       name: "",
       type: "partner",
       status: "prospect",
-      country: "",
+      locations: [{ id: crypto.randomUUID(), country: "", countryName: "", city: "", lat: 0, lng: 0, isDefault: true }],
       website: "",
       description: "",
       contacts: [],
@@ -133,16 +143,23 @@ export function OrganizationFormPage() {
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
-                <Input id="country" {...register("country")} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="website">Website</Label>
-                <AnimatedInput id="website" type="url" placeholder="https://..." error={!!errors.website} {...register("website")} />
-                {errors.website && <p className="text-sm text-destructive">{String(errors.website.message)}</p>}
-              </div>
+            <div className="space-y-2">
+              <Label>Locations *</Label>
+              <LocationEditor
+                value={watch("locations") ?? []}
+                onChange={(locs) => setValue("locations", locs, { shouldValidate: true })}
+              />
+              {errors.locations && (
+                <p className="text-sm text-destructive">
+                  {typeof errors.locations.message === "string" ? errors.locations.message : "Invalid locations"}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="website">Website</Label>
+              <AnimatedInput id="website" type="url" placeholder="https://..." error={!!errors.website} {...register("website")} />
+              {errors.website && <p className="text-sm text-destructive">{String(errors.website.message)}</p>}
             </div>
 
             <div className="space-y-2">

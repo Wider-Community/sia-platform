@@ -1,10 +1,25 @@
 import { z } from "zod";
 
+export const locationSchema = z.object({
+  id: z.string(),
+  country: z.string().min(1, "Country is required"),
+  countryName: z.string().min(1),
+  city: z.string().min(1, "City is required"),
+  lat: z.number(),
+  lng: z.number(),
+  isDefault: z.boolean(),
+});
+
+export type OrgLocation = z.infer<typeof locationSchema>;
+
 export const organizationSchema = z.object({
   name: z.string().min(1, "Name is required"),
   type: z.enum(["partner", "investor", "vendor", "client"], { message: "Type is required" }),
   status: z.enum(["active", "inactive", "prospect"], { message: "Status is required" }),
-  country: z.string().optional(),
+  locations: z.array(locationSchema).min(1, "At least one location is required").refine(
+    (locs) => locs.filter((l) => l.isDefault).length === 1,
+    { message: "Exactly one location must be default" }
+  ),
   website: z.string().url("Invalid URL").optional().or(z.literal("")),
   description: z.string().optional(),
   tags: z.array(z.string()).optional(),
@@ -96,6 +111,8 @@ export const signerSchema = z.object({
   token: z.string().min(1),
   signedAt: z.string().optional(),
   color: z.string().optional(),
+  expiresAt: z.string().optional(),
+  declineReason: z.string().optional(),
 });
 
 export type SigningRequest = z.infer<typeof signingRequestSchema> & { id: string; createdAt: string; updatedAt: string };

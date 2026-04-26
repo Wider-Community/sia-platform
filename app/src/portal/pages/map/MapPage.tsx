@@ -21,6 +21,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import type { Organization } from "../../schemas";
 
+interface OrgLocation {
+  id: string;
+  country: string;
+  countryName: string;
+  city: string;
+  lat: number;
+  lng: number;
+  isDefault: boolean;
+}
+
 const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
 const STAGE_COLORS: Record<string, string> = {
@@ -41,62 +51,6 @@ const STAGE_LABELS: Record<string, string> = {
   inactive: "Inactive",
 };
 
-const COUNTRY_COORDS: Record<string, [number, number]> = {
-  "UAE": [54.3, 24.5],
-  "United Arab Emirates": [54.3, 24.5],
-  "Saudi Arabia": [45.1, 23.9],
-  "United States": [-95.7, 37.1],
-  "USA": [-95.7, 37.1],
-  "United Kingdom": [-1.2, 52.2],
-  "UK": [-1.2, 52.2],
-  "Germany": [10.4, 51.2],
-  "France": [2.2, 46.6],
-  "India": [78.9, 20.6],
-  "China": [104.2, 35.9],
-  "Japan": [138.3, 36.2],
-  "South Korea": [127.8, 35.9],
-  "Singapore": [103.8, 1.4],
-  "Australia": [133.8, -25.3],
-  "Canada": [-106.3, 56.1],
-  "Brazil": [-51.9, -14.2],
-  "Mexico": [-102.6, 23.6],
-  "Egypt": [30.8, 26.8],
-  "South Africa": [22.9, -30.6],
-  "Nigeria": [8.7, 9.1],
-  "Kenya": [37.9, -0.02],
-  "Turkey": [35.2, 38.9],
-  "Italy": [12.6, 41.9],
-  "Spain": [-3.7, 40.5],
-  "Netherlands": [5.3, 52.1],
-  "Switzerland": [8.2, 46.8],
-  "Sweden": [18.6, 60.1],
-  "Norway": [8.5, 60.5],
-  "Poland": [19.1, 51.9],
-  "Qatar": [51.2, 25.3],
-  "Bahrain": [50.6, 26.0],
-  "Kuwait": [47.5, 29.3],
-  "Oman": [55.9, 21.5],
-  "Jordan": [36.2, 30.6],
-  "Lebanon": [35.9, 33.9],
-  "Iraq": [43.7, 33.2],
-  "Iran": [53.7, 32.4],
-  "Pakistan": [69.3, 30.4],
-  "Bangladesh": [90.4, 23.7],
-  "Indonesia": [113.9, -0.8],
-  "Malaysia": [101.9, 4.2],
-  "Thailand": [100.5, 15.9],
-  "Vietnam": [108.3, 14.1],
-  "Philippines": [121.8, 12.9],
-  "New Zealand": [174.9, -40.9],
-  "Argentina": [-63.6, -38.4],
-  "Colombia": [-74.3, 4.6],
-  "Chile": [-71.5, -35.7],
-  "Peru": [-75.0, -9.2],
-  "Morocco": [-7.1, 31.8],
-  "Tunisia": [9.5, 33.9],
-  "Russia": [105.3, 61.5],
-  "Ukraine": [31.2, 48.4],
-};
 
 function getOrgStage(org: Organization & Record<string, unknown>): string {
   return (
@@ -113,6 +67,7 @@ export function MapPage() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [tooltip, setTooltip] = useState<{
     name: string;
+    city: string;
     stage: string;
     type: string;
     x: number;
@@ -126,28 +81,38 @@ export function MapPage() {
 
   const markers = useMemo(() => {
     if (!data?.data) return [];
-    return data.data
-      .map((org: Organization & Record<string, unknown>) => {
-        const country = org.country as string | undefined;
-        if (!country || !COUNTRY_COORDS[country]) return null;
-        const stage = getOrgStage(org);
-        return {
-          id: org.id,
+    const result: Array<{
+      id: string;
+      orgId: string;
+      name: string;
+      city: string;
+      countryName: string;
+      type: string;
+      stage: string;
+      coordinates: [number, number];
+      isDefault: boolean;
+    }> = [];
+    for (const org of data.data) {
+      const locations = (org as unknown as { locations?: OrgLocation[] }).locations;
+      console.log("[MapDebug]", org.name, "locations:", JSON.stringify(locations));
+      if (!locations || locations.length === 0) continue;
+      const stage = getOrgStage(org as Organization & Record<string, unknown>);
+      for (const loc of locations) {
+        if (!loc.lat && !loc.lng) continue;
+        result.push({
+          id: `${org.id}-${loc.id}`,
+          orgId: org.id,
           name: org.name,
-          country,
+          city: loc.city,
+          countryName: loc.countryName,
           type: org.type,
           stage,
-          coordinates: COUNTRY_COORDS[country],
-        };
-      })
-      .filter(Boolean) as Array<{
-        id: string;
-        name: string;
-        country: string;
-        type: string;
-        stage: string;
-        coordinates: [number, number];
-      }>;
+          coordinates: [loc.lng, loc.lat] as [number, number],
+          isDefault: loc.isDefault,
+        });
+      }
+    }
+    return result;
   }, [data]);
 
   const filtered = useMemo(() => {
@@ -241,12 +206,13 @@ export function MapPage() {
                 <Marker
                   key={m.id}
                   coordinates={m.coordinates}
-                  onClick={() => navigate(`/portal/organizations/${m.id}`)}
+                  onClick={() => navigate(`/portal/organizations/${m.orgId}`)}
                   onMouseEnter={(e) => {
                     const target = e.target as SVGElement;
                     const ctm = target.getScreenCTM();
                     setTooltip({
                       name: m.name,
+                      city: m.city,
                       stage: STAGE_LABELS[m.stage] ?? m.stage,
                       type: m.type,
                       x: ctm ? ctm.e : 0,
@@ -257,7 +223,7 @@ export function MapPage() {
                   style={{ cursor: "pointer" }}
                 >
                   <circle
-                    r={5}
+                    r={m.isDefault ? 6 : 4}
                     fill={STAGE_COLORS[m.stage] ?? "#94a3b8"}
                     stroke="#fff"
                     strokeWidth={1.5}
@@ -272,7 +238,7 @@ export function MapPage() {
               className="fixed z-50 rounded-md bg-popover px-3 py-2 text-sm text-popover-foreground shadow-md border pointer-events-none"
               style={{ left: tooltip.x, top: tooltip.y, transform: "translate(-50%, -100%)" }}
             >
-              <div className="font-semibold">{tooltip.name}</div>
+              <div className="font-semibold">{tooltip.name} &mdash; {tooltip.city}</div>
               <div className="text-muted-foreground">
                 {tooltip.stage} &middot; {tooltip.type}
               </div>

@@ -19,11 +19,19 @@ import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
   ArrowRight,
+  Copy,
   Loader2,
   Plus,
   Trash2,
   Upload,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { PageShell } from "../../components/PageShell";
 import { PageHeader } from "../../components/PageHeader";
 import { PdfViewer } from "../../components/PdfViewer";
@@ -54,6 +62,8 @@ export function NewSigningRequestPage() {
   const { mutateAsync: create } = useCreate();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  const [createdLinks, setCreatedLinks] = useState<Array<{name: string; link: string}>>([]);
+  const [createdRequestId, setCreatedRequestId] = useState<string | null>(null);
 
   // Step 1
   const [title, setTitle] = useState("");
@@ -216,6 +226,7 @@ export function NewSigningRequestPage() {
 
       // Create signers
       const signerIdMap: Record<string, string> = {};
+      const links: Array<{name: string; link: string}> = [];
       for (const s of signers) {
         const token = crypto.randomUUID();
         const signerResult = await create({
@@ -227,13 +238,11 @@ export function NewSigningRequestPage() {
             status: "pending",
             token,
             color: s.color,
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           },
         });
         signerIdMap[s.tempId] = (signerResult.data as { id: string }).id;
-        // Log the signing link (in real app this would be emailed)
-        console.log(
-          `Signing link for ${s.name}: ${appUrl}/sign/${token}`,
-        );
+        links.push({ name: s.name, link: `${appUrl}/sign/${token}` });
       }
 
       // Create signature fields
@@ -253,7 +262,8 @@ export function NewSigningRequestPage() {
         });
       }
 
-      navigate(`/portal/signing/${requestId}`);
+      setCreatedLinks(links);
+      setCreatedRequestId(requestId);
     } catch (err) {
       console.error("Failed to create signing request:", err);
     } finally {
@@ -566,6 +576,36 @@ export function NewSigningRequestPage() {
         </Card>
       )}
     </div>
+
+      <Dialog open={createdLinks.length > 0} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-lg" onPointerDownOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>Signing Links Created</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {createdLinks.map((entry, idx) => (
+              <div key={idx} className="flex items-center gap-2 rounded-md border p-3">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium">{entry.name}</p>
+                  <p className="text-sm text-muted-foreground truncate">{entry.link}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigator.clipboard.writeText(entry.link)}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => navigate(`/portal/signing/${createdRequestId}`)}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageShell>
   );
 }
