@@ -37,7 +37,7 @@ export function ContactFormPage() {
   const { id } = useParams();
   const isEdit = Boolean(id);
 
-  const { data: orgsData } = useList({
+  const orgsData = useList({
     resource: "organizations",
     pagination: { mode: "off" },
   });
@@ -48,8 +48,12 @@ export function ContactFormPage() {
     queryOptions: { enabled: isEdit },
   });
 
-  const { mutate: createContact, isLoading: isCreating } = useCreate();
-  const { mutate: updateContact, isLoading: isUpdating } = useUpdate();
+  const createMutation = useCreate();
+  const createContact = createMutation.mutate;
+  const isCreating = createMutation.isPending ?? false;
+  const updateMutation = useUpdate();
+  const updateContact = updateMutation.mutate;
+  const isUpdating = updateMutation.isPending ?? false;
 
   const {
     register,
@@ -167,7 +171,7 @@ export function ContactFormPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {(orgsData?.data ?? []).map((org) => (
+                    {(orgsData.result?.data ?? []).map((org: { id: unknown; name: unknown }) => (
                       <SelectItem key={org.id as string} value={org.id as string}>
                         {org.name as string}
                       </SelectItem>

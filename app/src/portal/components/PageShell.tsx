@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface PageShellProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   loading?: boolean;
 }
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useList } from "@refinedev/core";
 import { useNavigate } from "react-router-dom";
 import { PageShell } from "../../components/PageShell";

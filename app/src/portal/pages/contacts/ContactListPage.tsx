@@ -5,7 +5,6 @@ import { PageShell } from "../../components/PageShell";
 import { PageHeader } from "../../components/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { AnimatedButton } from "../../components/AnimatedButton";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,29 +18,31 @@ export function ContactListPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
 
-  const { data: contactsData, isLoading } = useList({
+  const contactsList = useList({
     resource: "contacts",
     pagination: { mode: "off" },
   });
+  const contactsData = contactsList.result?.data;
+  const isLoading = contactsList.query.isLoading;
 
-  const { data: orgsData } = useList({
+  const orgsList = useList({
     resource: "organizations",
     pagination: { mode: "off" },
   });
 
   const orgMap = useMemo(() => {
     const map = new Map<string, string>();
-    orgsData?.data?.forEach((org) => {
+    (orgsList.result?.data ?? []).forEach((org: { id: unknown; name: unknown }) => {
       map.set(org.id as string, org.name as string);
     });
     return map;
-  }, [orgsData]);
+  }, [orgsList.result?.data]);
 
   const filtered = useMemo(() => {
-    const contacts = contactsData?.data ?? [];
+    const contacts = contactsData ?? [];
     if (!search.trim()) return contacts;
     const q = search.toLowerCase();
-    return contacts.filter((c) => {
+    return contacts.filter((c: Record<string, unknown>) => {
       const name = `${c.firstName} ${c.lastName}`.toLowerCase();
       const email = ((c.email as string) ?? "").toLowerCase();
       return name.includes(q) || email.includes(q);

@@ -20,7 +20,6 @@ import {
   Settings,
   LayoutDashboard,
 } from "lucide-react";
-import type { BaseRecord } from "@refinedev/core";
 
 interface SearchResult {
   id: string;

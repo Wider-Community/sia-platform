@@ -20,7 +20,8 @@ const SKIP_ACTIVITY_LOGGING = new Set([
 ]);
 
 export class EntityControlLayer {
-  constructor(private client: MujarradClient) {}
+  private client: MujarradClient;
+  constructor(client: MujarradClient) { this.client = client; }
 
   async createEntity(
     resource: string,
@@ -304,7 +305,7 @@ export class EntityControlLayer {
     pagination?: Pagination,
   ): EntityRecord[] {
     if (!pagination || pagination.mode === "off") return data;
-    const page = pagination.current ?? 1;
+    const page = (pagination as Record<string, unknown>).current as number ?? 1;
     const size = pagination.pageSize ?? 10;
     return data.slice((page - 1) * size, page * size);
   }

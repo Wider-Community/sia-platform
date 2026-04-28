@@ -2,7 +2,6 @@ import { useLogin } from "@refinedev/core";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
 import { AnimatedButton } from "../components/AnimatedButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,8 +24,7 @@ export function PortalLoginPage() {
 
   const handleGoogleLogin = async () => {
     if (!hasGoogleOAuth) return;
-    const { useGoogleLogin } = await import("@react-oauth/google");
-    // Dynamic import won't work with hooks — fall back to redirect
+    await import("@react-oauth/google");
     login({ provider: "google" });
   };
 
