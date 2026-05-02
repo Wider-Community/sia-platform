@@ -17,11 +17,11 @@
 | 3 | Contacts CRUD | PASS | 2 | 2 |
 | 4 | Tasks | PASS | 2 | 2 |
 | 5 | Dashboard | PASS | 1 | 1 |
-| 6 | Signing Flow | PENDING | — | — |
+| 6 | Signing Flow | PASS | 3 | 3 |
 | 7 | Pipeline & Map | PASS | 4 | 4 |
 | 8 | Portal Shell | PASS | 2 | 2 |
 
-**Total bugs found and fixed: 16**
+**Total bugs found and fixed: 19**
 
 ---
 
@@ -117,7 +117,26 @@
 
 ## 6. Signing Flow (Task #6)
 
-**Status:** Pending — not yet tested
+**Files modified:**
+- `src/portal/pages/signing/SigningDetailPage.tsx`
+- `src/portal/pages/signing/PublicSigningPage.tsx`
+
+**Bugs fixed:**
+1. **`useList` destructuring (SigningDetailPage)** — `signersResult` and `fieldsResult` accessed as raw QueryObserverResult instead of Refine v5 `{ result, query }` pattern. Signers and fields would not render.
+2. **`appUrl` used before declaration (SigningDetailPage)** — `handleResend` referenced `appUrl` before it was declared, causing ReferenceError when resending signing links. Moved declaration before the function.
+3. **`useList` destructuring (PublicSigningPage)** — All five `useList` calls used wrong access pattern. Public signing page would fail to load signer data and signature fields.
+
+**Verified working:**
+- SigningListPage — `useTable` (correct pattern), status badges, navigation
+- NewSigningRequestPage — 4-step wizard (upload → place fields → assign signers → send)
+- PdfViewer — react-pdf page navigation, zoom
+- SignatureFieldOverlay — @dnd-kit draggable fields, percentage-based coordinates
+- SignatureCapture — draw/type/upload tabs, data URL export
+- pdf-lib assembly — coordinate mapping (% to PDF units, Y-axis flip)
+- Entity registry — signing-requests, signature-fields, signers defs correct
+- Zod schemas — all signing schemas valid
+- Router — protected routes inside auth, public `/sign/:token` outside auth
+- All three entity types created successfully against live API
 
 ---
 

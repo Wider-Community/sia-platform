@@ -63,7 +63,7 @@ export function SigningDetailPage() {
   });
   const req = reqQuery.data?.data;
 
-  const signersResult = useList({
+  const { result: signersData, query: signersQuery } = useList({
     resource: "signers",
     filters: [
       { field: "signingRequestId", operator: "eq", value: id },
@@ -71,7 +71,7 @@ export function SigningDetailPage() {
     pagination: { mode: "off" },
   });
 
-  const fieldsResult = useList({
+  const { result: fieldsData, query: fieldsQuery } = useList({
     resource: "signature-fields",
     filters: [
       { field: "signingRequestId", operator: "eq", value: id },
@@ -81,6 +81,11 @@ export function SigningDetailPage() {
 
   const { mutate: updateRequest } = useUpdate();
   const { mutate: updateSigner } = useUpdate();
+
+  const signersList = (signersData?.data ?? []) as BaseRecord[];
+  const fieldsList = (fieldsData?.data ?? []) as BaseRecord[];
+
+  const appUrl = import.meta.env.VITE_APP_URL ?? window.location.origin;
 
   const handleResend = async (signer: BaseRecord) => {
     const newToken = crypto.randomUUID();
@@ -96,11 +101,6 @@ export function SigningDetailPage() {
       },
     });
   };
-
-  const signersList = (signersResult.data?.data ?? []) as BaseRecord[];
-  const fieldsList = (fieldsResult.data?.data ?? []) as BaseRecord[];
-
-  const appUrl = import.meta.env.VITE_APP_URL ?? window.location.origin;
 
   const fieldRects: FieldRect[] = fieldsList.map((f) => {
     const signer = signersList.find((s) => s.id === f.signerId);
@@ -220,7 +220,7 @@ export function SigningDetailPage() {
               <CardTitle>Signer Progress</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {signersResult.isLoading ? (
+              {signersQuery.isLoading ? (
                 <Skeleton className="h-32 w-full" />
               ) : signersList.length > 0 ? (
                 signersList.map((signer) => {
@@ -309,8 +309,8 @@ export function SigningDetailPage() {
                 size="sm"
                 onClick={() => {
                   reqQuery.refetch();
-                  signersResult.refetch();
-                  fieldsResult.refetch();
+                  signersQuery.refetch();
+                  fieldsQuery.refetch();
                 }}
               >
                 <RefreshCw className="mr-2 h-4 w-4" />

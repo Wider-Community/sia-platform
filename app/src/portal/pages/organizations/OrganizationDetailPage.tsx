@@ -1,4 +1,4 @@
-import { useOne, useList, useCreate, useDelete } from "@refinedev/core";
+import { useOne, useList, useCreate, useDelete, useCustom } from "@refinedev/core";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
 import { AnimatedTabContent } from "../../components/AnimatedTabContent";
@@ -37,6 +37,8 @@ import {
   Download,
   Plus,
   Mail,
+  Link2,
+  ArrowRight,
 } from "lucide-react";
 import type { BaseRecord } from "@refinedev/core";
 import { FileUploader } from "../../components/FileUploader";
@@ -56,6 +58,18 @@ export function OrganizationDetailPage() {
   const files = useList({ resource: "files", filters: [{ field: "organizationId", operator: "eq", value: id }], pagination: { mode: "off" } });
   const notes = useList({ resource: "notes", filters: [{ field: "organizationId", operator: "eq", value: id }], sorters: [{ field: "createdAt", order: "desc" }], pagination: { mode: "off" } });
   const events = useList({ resource: "activity-events", filters: [{ field: "organizationId", operator: "eq", value: id }], sorters: [{ field: "createdAt", order: "desc" }], pagination: { mode: "off" } });
+
+  const { data: attributesData, isLoading: attributesLoading } = useCustom({
+    url: `/api/nodes/${id}/attributes`,
+    method: "get",
+  });
+
+  // Also fetch incoming attributes (where this org is the target)
+  // For now, the outgoing attributes from the node are sufficient
+
+  const relationships = (attributesData?.data as any[])?.filter(
+    (attr: any) => attr.attributeName !== "belongs_to" && attr.attributeName !== "relates_to"
+  ) ?? [];
 
   const { mutate: createNote } = useCreate();
   const { mutate: deleteFile } = useDelete();
@@ -164,6 +178,9 @@ export function OrganizationDetailPage() {
           <TabsTrigger value="activity">
             <Activity className="mr-1 h-4 w-4" /> Activity
           </TabsTrigger>
+          <TabsTrigger value="relationships">
+            <Link2 className="mr-1 h-4 w-4" /> Relationships ({relationships.length})
+          </TabsTrigger>
         </TabsList>
 
         {/* Overview */}
@@ -207,6 +224,90 @@ export function OrganizationDetailPage() {
                     <dd className="flex flex-wrap gap-1 mt-1">
                       {(org.tags as string[]).map((tag) => (
                         <Badge key={tag} variant="outline">{tag}</Badge>
+                      ))}
+                    </dd>
+                  </div>
+                )}
+
+                {/* Market Intelligence Data — only shown when present */}
+                {(org as any).team_size && (
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">Team Size</dt>
+                    <dd>{(org as any).team_size}{(org as any).team_size_source ? <span className="ml-1 text-xs text-muted-foreground">({(org as any).team_size_source})</span> : null}</dd>
+                  </div>
+                )}
+
+                {(org as any).founded_year && (
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">Founded</dt>
+                    <dd>{(org as any).founded_year}</dd>
+                  </div>
+                )}
+
+                {(org as any).hourly_rate && (
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">Hourly Rate</dt>
+                    <dd>{(org as any).hourly_rate}</dd>
+                  </div>
+                )}
+
+                {(org as any).google_rating != null && (
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">Google Rating</dt>
+                    <dd>{(org as any).google_rating} ({(org as any).google_reviews_count ?? 0} reviews)</dd>
+                  </div>
+                )}
+
+                {(org as any).linkedin_url && (
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">LinkedIn</dt>
+                    <dd>
+                      <a href={(org as any).linkedin_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate block">
+                        {(org as any).linkedin_url}
+                      </a>
+                    </dd>
+                  </div>
+                )}
+
+                {(org as any).services?.length > 0 && (
+                  <div className="sm:col-span-2">
+                    <dt className="text-sm font-medium text-muted-foreground">Services</dt>
+                    <dd className="flex flex-wrap gap-1 mt-1">
+                      {((org as any).services as string[]).map((s: string) => (
+                        <Badge key={s} variant="outline">{s}</Badge>
+                      ))}
+                    </dd>
+                  </div>
+                )}
+
+                {(org as any).industries_served?.length > 0 && (
+                  <div className="sm:col-span-2">
+                    <dt className="text-sm font-medium text-muted-foreground">Industries Served</dt>
+                    <dd className="flex flex-wrap gap-1 mt-1">
+                      {((org as any).industries_served as string[]).map((ind: string) => (
+                        <Badge key={ind} variant="secondary">{ind}</Badge>
+                      ))}
+                    </dd>
+                  </div>
+                )}
+
+                {(org as any).tech_stack?.length > 0 && (
+                  <div className="sm:col-span-2">
+                    <dt className="text-sm font-medium text-muted-foreground">Tech Stack</dt>
+                    <dd className="flex flex-wrap gap-1 mt-1">
+                      {((org as any).tech_stack as string[]).map((t: string) => (
+                        <Badge key={t} className="font-mono text-xs">{t}</Badge>
+                      ))}
+                    </dd>
+                  </div>
+                )}
+
+                {(org as any).data_sources?.length > 0 && (
+                  <div className="sm:col-span-2">
+                    <dt className="text-sm font-medium text-muted-foreground">Data Sources</dt>
+                    <dd className="flex flex-wrap gap-1 mt-1">
+                      {((org as any).data_sources as string[]).map((src: string) => (
+                        <Badge key={src} variant="outline" className="text-xs">{src}</Badge>
                       ))}
                     </dd>
                   </div>
@@ -386,6 +487,84 @@ export function OrganizationDetailPage() {
                     timestamp: e.createdAt as string,
                     variant: (e.action as string) === "deleted" ? "destructive" as const : "default" as const,
                   } satisfies TimelineEvent))}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </AnimatedTabContent>
+
+        {/* Relationships */}
+        <AnimatedTabContent activeValue={activeTab} value="relationships">
+          <Card>
+            <CardContent className="pt-6">
+              {attributesLoading ? (
+                <TableSkeleton rows={3} columns={4} />
+              ) : relationships.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Relationship</TableHead>
+                      <TableHead>Connected Organization</TableHead>
+                      <TableHead>Confidence</TableHead>
+                      <TableHead>Signals</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {relationships.map((rel: any) => {
+                      const meta = rel.attributeValue ?? {};
+                      const confidence = meta.confidence ?? null;
+                      const signals = meta.signals ?? [];
+                      const targetId = rel.targetNodeId;
+                      const verb = (rel.attributeName ?? "").replace(/_/g, " ");
+
+                      return (
+                        <TableRow key={rel.id}>
+                          <TableCell>
+                            <Badge variant="outline" className="capitalize">{verb}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="link"
+                              className="h-auto p-0"
+                              onClick={() => navigate(`/portal/organizations/${targetId}`)}
+                            >
+                              {targetId} <ArrowRight className="ml-1 h-3 w-3" />
+                            </Button>
+                          </TableCell>
+                          <TableCell>
+                            {confidence != null ? (
+                              <div className="flex items-center gap-2">
+                                <div className="h-2 w-16 rounded-full bg-muted overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full bg-primary"
+                                    style={{ width: `${Math.round(confidence * 100)}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs text-muted-foreground">
+                                  {Math.round(confidence * 100)}%
+                                </span>
+                              </div>
+                            ) : "—"}
+                          </TableCell>
+                          <TableCell>
+                            {signals.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {signals.map((s: string, i: number) => (
+                                  <Badge key={i} variant="secondary" className="text-xs">{s}</Badge>
+                                ))}
+                              </div>
+                            ) : "—"}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              ) : (
+                <EmptyState
+                  icon={Link2}
+                  title="No relationships yet"
+                  description="Relationships will appear here when the intelligence engine discovers connections to other organizations."
                 />
               )}
             </CardContent>

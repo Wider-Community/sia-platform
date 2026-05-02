@@ -47,17 +47,17 @@ function PublicSigningPageInner() {
   const [declineReason, setDeclineReason] = useState("");
 
   // Find signer by token
-  const signersQuery = useList({
+  const { result: signersResult, query: signersQueryState } = useList({
     resource: "signers",
     filters: [{ field: "token", operator: "eq", value: token }],
     pagination: { mode: "off" },
   });
 
-  const signer = (signersQuery.data?.data ?? [])[0] as BaseRecord | undefined;
+  const signer = (signersResult?.data ?? [])[0] as BaseRecord | undefined;
   const signingRequestId = signer?.signingRequestId as string | undefined;
 
   // Get the signing request
-  const requestQuery = useList({
+  const { result: requestResult, query: requestQueryState } = useList({
     resource: "signing-requests",
     filters: signingRequestId
       ? [{ field: "id", operator: "eq", value: signingRequestId }]
@@ -65,10 +65,10 @@ function PublicSigningPageInner() {
     pagination: { mode: "off" },
     queryOptions: { enabled: !!signingRequestId },
   });
-  const request = (requestQuery.data?.data ?? [])[0] as BaseRecord | undefined;
+  const request = (requestResult?.data ?? [])[0] as BaseRecord | undefined;
 
   // Get fields for this signer
-  const fieldsQuery = useList({
+  const { result: fieldsResult, query: fieldsQueryState } = useList({
     resource: "signature-fields",
     filters: signer
       ? [
@@ -81,7 +81,7 @@ function PublicSigningPageInner() {
   });
 
   // Get all fields for the request (to show other signers' fields as non-interactive)
-  const allFieldsQuery = useList({
+  const { result: allFieldsResult } = useList({
     resource: "signature-fields",
     filters: signingRequestId
       ? [{ field: "signingRequestId", operator: "eq", value: signingRequestId }]
@@ -91,7 +91,7 @@ function PublicSigningPageInner() {
   });
 
   // Get all signers for this request
-  const allSignersQuery = useList({
+  const { result: allSignersResult } = useList({
     resource: "signers",
     filters: signingRequestId
       ? [{ field: "signingRequestId", operator: "eq", value: signingRequestId }]
@@ -104,9 +104,9 @@ function PublicSigningPageInner() {
   const { mutateAsync: updateSigner } = useUpdate();
   const { mutateAsync: updateRequest } = useUpdate();
 
-  const myFields = (fieldsQuery.data?.data ?? []) as BaseRecord[];
-  const allFields = (allFieldsQuery.data?.data ?? []) as BaseRecord[];
-  const allSigners = (allSignersQuery.data?.data ?? []) as BaseRecord[];
+  const myFields = (fieldsResult?.data ?? []) as BaseRecord[];
+  const allFields = (allFieldsResult?.data ?? []) as BaseRecord[];
+  const allSigners = (allSignersResult?.data ?? []) as BaseRecord[];
 
   const myFieldIds = new Set(myFields.map((f) => f.id as string));
 
@@ -224,7 +224,7 @@ function PublicSigningPageInner() {
   const isExpired = signer?.expiresAt && new Date(signer.expiresAt as string) < new Date();
 
   const isLoading =
-    signersQuery.isLoading || requestQuery.isLoading || fieldsQuery.isLoading;
+    signersQueryState.isLoading || requestQueryState.isLoading || fieldsQueryState.isLoading;
 
   if (isLoading) {
     return (
