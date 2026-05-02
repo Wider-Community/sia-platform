@@ -186,6 +186,25 @@ export const ENTITY_REGISTRY: Record<string, EntityDef> = {
     requiredFields: ["type", "title", "message", "read"],
     relationships: [],
   },
+  matches: {
+    nodeType: "REGULAR",
+    titleField: "matchReason",
+    requiredFields: ["organizationAId", "organizationBId", "status", "matchScore", "matchReason", "category", "suggestedBy"],
+    relationships: [
+      {
+        targetResource: "organizations",
+        fkField: "organizationAId",
+        verb: "matches_with",
+        direction: "outgoing",
+      },
+      {
+        targetResource: "organizations",
+        fkField: "organizationBId",
+        verb: "matches_with",
+        direction: "outgoing",
+      },
+    ],
+  },
 };
 
 export function getEntityDef(resource: string): EntityDef | undefined {

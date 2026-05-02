@@ -1,4 +1,3 @@
-import { useDelete } from "@refinedev/core";
 import { useTable } from "@refinedev/react-table";
 import {
   type ColumnDef,
@@ -9,6 +8,7 @@ import {
   getCoreRowModel,
 } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
+import { useList } from "@refinedev/core";
 import {
   Table,
   TableBody,
@@ -29,70 +29,53 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, ArrowUpDown, ChevronLeft, ChevronRight, Handshake, Trash2 } from "lucide-react";
+import { Plus, ArrowUpDown, ChevronLeft, ChevronRight, Link2 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { ENGAGEMENT_STAGES, ENGAGEMENT_CATEGORIES, type Engagement } from "../../schemas";
+import { MATCH_CATEGORIES, MATCH_STATUSES, type Match } from "../../schemas";
 import { PageShell } from "../../components/PageShell";
 import { EmptyState } from "../../components/EmptyState";
 import { PageHeader } from "../../components/PageHeader";
+import type { BaseRecord } from "@refinedev/core";
 
-const stageVariant: Record<string, "default" | "secondary" | "outline"> = {
-  prospect: "outline",
-  in_progress: "secondary",
-  negotiating: "secondary",
-  formalized: "default",
-  active: "default",
-  completed: "outline",
-  dormant: "outline",
+const statusBadgeConfig: Record<string, { variant: "default" | "secondary" | "outline" | "destructive"; className?: string }> = {
+  pending: { variant: "outline", className: "border-amber-500 text-amber-600" },
+  accepted_a: { variant: "secondary", className: "bg-blue-100 text-blue-700" },
+  accepted_b: { variant: "secondary", className: "bg-blue-100 text-blue-700" },
+  mutual: { variant: "default", className: "bg-green-600" },
+  declined: { variant: "destructive" },
+  expired: { variant: "outline", className: "text-muted-foreground" },
 };
 
-const priorityVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  low: "outline",
-  medium: "secondary",
-  high: "default",
-  critical: "destructive",
-};
-
-function formatStage(stage: string) {
-  return stage.replace(/_/g, " ");
+function formatLabel(value: string) {
+  return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-export function EngagementListPage() {
+export function MatchListPage() {
   const navigate = useNavigate();
   const [globalFilter, setGlobalFilter] = useState("");
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-  const { mutate: deleteEngagement } = useDelete();
 
-  const columns = useMemo<ColumnDef<Engagement>[]>(
+  // Fetch organizations for name lookup
+  const orgs = useList({ resource: "organizations", pagination: { mode: "off" } });
+  const orgMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const org of (orgs.result?.data ?? []) as BaseRecord[]) {
+      map[org.id as string] = org.name as string;
+    }
+    return map;
+  }, [orgs.result?.data]);
+
+  const columns = useMemo<ColumnDef<Match>[]>(
     () => [
       {
-        accessorKey: "title",
-        header: ({ column }) => (
-          <Button variant="ghost" onClick={() => column.toggleSorting()}>
-            Title <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        ),
-      },
-      {
-        accessorKey: "organizationId",
-        header: "Organization",
-        cell: ({ row }) => {
-          const org = row.original as any;
-          const name = org.organizationName ?? org.organizationId;
+        accessorKey: "organizationAId",
+        header: "Organization A",
+        cell: ({ getValue }) => {
+          const id = getValue<string>();
+          const name = orgMap[id] ?? id;
           return (
             <Link
-              to={`/portal/organizations/${row.original.organizationId}`}
+              to={`/portal/organizations/${id}`}
               className="text-primary underline-offset-4 hover:underline"
               onClick={(e) => e.stopPropagation()}
             >
@@ -102,46 +85,73 @@ export function EngagementListPage() {
         },
       },
       {
-        accessorKey: "stage",
-        header: "Stage",
+        accessorKey: "organizationBId",
+        header: "Organization B",
         cell: ({ getValue }) => {
-          const stage = getValue<string>();
+          const id = getValue<string>();
+          const name = orgMap[id] ?? id;
           return (
-            <Badge variant={stageVariant[stage] ?? "outline"} className="capitalize">
-              {formatStage(stage)}
-            </Badge>
+            <Link
+              to={`/portal/organizations/${id}`}
+              className="text-primary underline-offset-4 hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {name}
+            </Link>
           );
         },
-        filterFn: "equals",
+      },
+      {
+        accessorKey: "matchScore",
+        header: ({ column }) => (
+          <Button variant="ghost" onClick={() => column.toggleSorting()}>
+            Score <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
+        cell: ({ getValue }) => {
+          const score = getValue<number>();
+          return (
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-16 rounded-full bg-muted">
+                <div
+                  className="h-2 rounded-full bg-primary"
+                  style={{ width: `${score}%` }}
+                />
+              </div>
+              <span className="text-sm text-muted-foreground">{score}</span>
+            </div>
+          );
+        },
       },
       {
         accessorKey: "category",
         header: "Category",
         cell: ({ getValue }) => (
           <Badge variant="secondary" className="capitalize">
-            {getValue<string>()}
+            {formatLabel(getValue<string>())}
           </Badge>
         ),
         filterFn: "equals",
       },
       {
-        accessorKey: "priority",
-        header: "Priority",
+        accessorKey: "status",
+        header: "Status",
         cell: ({ getValue }) => {
-          const priority = getValue<string>();
+          const status = getValue<string>();
+          const config = statusBadgeConfig[status] ?? { variant: "outline" as const };
           return (
-            <Badge variant={priorityVariant[priority] ?? "outline"} className="capitalize">
-              {priority}
+            <Badge variant={config.variant} className={config.className}>
+              {formatLabel(status)}
             </Badge>
           );
         },
         filterFn: "equals",
       },
       {
-        accessorKey: "targetDate",
+        accessorKey: "createdAt",
         header: ({ column }) => (
           <Button variant="ghost" onClick={() => column.toggleSorting()}>
-            Target Date <ArrowUpDown className="ml-2 h-4 w-4" />
+            Created <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
         cell: ({ getValue }) => {
@@ -149,33 +159,16 @@ export function EngagementListPage() {
           return val ? new Date(val).toLocaleDateString() : "—";
         },
       },
-      {
-        id: "actions",
-        header: "",
-        size: 60,
-        cell: ({ row }) => (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              setPendingDeleteId(row.original.id);
-            }}
-          >
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-        ),
-      },
     ],
-    [],
+    [orgMap],
   );
 
-  const { reactTable, refineCore } = useTable<Engagement>({
+  const { reactTable, refineCore } = useTable<Match>({
     columns,
     refineCoreProps: {
-      resource: "engagements",
+      resource: "matches",
       pagination: { mode: "client", pageSize: 10 },
-      sorters: { initial: [{ field: "updatedAt", order: "desc" }] },
+      sorters: { initial: [{ field: "createdAt", order: "desc" }] },
     },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -191,11 +184,11 @@ export function EngagementListPage() {
   return (
     <PageShell>
       <PageHeader
-        title="Engagements"
+        title="Matches"
         actions={
-          <AnimatedButton onClick={() => navigate("/portal/engagements/create")}>
+          <AnimatedButton onClick={() => navigate("/portal/matches/create")}>
             <Plus className="mr-2 h-4 w-4" />
-            New Engagement
+            Create Match
           </AnimatedButton>
         }
       />
@@ -203,25 +196,25 @@ export function EngagementListPage() {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <Input
-          placeholder="Search engagements..."
+          placeholder="Search matches..."
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
           className="max-w-xs"
         />
         <Select
-          value={(reactTable.getColumn("stage")?.getFilterValue() as string) ?? "all"}
+          value={(reactTable.getColumn("status")?.getFilterValue() as string) ?? "all"}
           onValueChange={(v) =>
-            reactTable.getColumn("stage")?.setFilterValue(v === "all" ? undefined : v)
+            reactTable.getColumn("status")?.setFilterValue(v === "all" ? undefined : v)
           }
         >
           <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="All Stages" />
+            <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Stages</SelectItem>
-            {ENGAGEMENT_STAGES.map((s) => (
+            <SelectItem value="all">All Statuses</SelectItem>
+            {MATCH_STATUSES.map((s) => (
               <SelectItem key={s} value={s} className="capitalize">
-                {formatStage(s)}
+                {formatLabel(s)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -232,33 +225,16 @@ export function EngagementListPage() {
             reactTable.getColumn("category")?.setFilterValue(v === "all" ? undefined : v)
           }
         >
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            {ENGAGEMENT_CATEGORIES.map((c) => (
+            {MATCH_CATEGORIES.map((c) => (
               <SelectItem key={c} value={c} className="capitalize">
-                {c}
+                {formatLabel(c)}
               </SelectItem>
             ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={(reactTable.getColumn("priority")?.getFilterValue() as string) ?? "all"}
-          onValueChange={(v) =>
-            reactTable.getColumn("priority")?.setFilterValue(v === "all" ? undefined : v)
-          }
-        >
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="All Priorities" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Priorities</SelectItem>
-            <SelectItem value="low">Low</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="critical">Critical</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -299,7 +275,7 @@ export function EngagementListPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: index * 0.03 }}
                     className="cursor-pointer border-b transition-colors hover:bg-muted/50"
-                    onClick={() => navigate(`/portal/engagements/${row.original.id}`)}
+                    onClick={() => navigate(`/portal/matches/${row.original.id}`)}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
@@ -313,10 +289,10 @@ export function EngagementListPage() {
               <TableRow>
                 <TableCell colSpan={columns.length}>
                   <EmptyState
-                    icon={Handshake}
-                    title="No engagements yet"
-                    description="Create your first engagement to start tracking deals and opportunities."
-                    action={{ label: "Create first engagement", onClick: () => navigate("/portal/engagements/create") }}
+                    icon={Link2}
+                    title="No matches yet"
+                    description="Create your first match to connect organizations with mutual opportunities."
+                    action={{ label: "Create first match", onClick: () => navigate("/portal/matches/create") }}
                   />
                 </TableCell>
               </TableRow>
@@ -328,7 +304,7 @@ export function EngagementListPage() {
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {reactTable.getFilteredRowModel().rows.length} engagement(s)
+          {reactTable.getFilteredRowModel().rows.length} match(es)
         </p>
         <div className="flex items-center gap-2">
           <Button
@@ -353,30 +329,6 @@ export function EngagementListPage() {
           </Button>
         </div>
       </div>
-
-      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete engagement?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this engagement. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (pendingDeleteId) {
-                  deleteEngagement({ resource: "engagements", id: pendingDeleteId });
-                }
-                setPendingDeleteId(null);
-              }}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </PageShell>
   );
 }

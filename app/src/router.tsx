@@ -31,6 +31,9 @@ import { MapPage } from "@/portal/pages/map/MapPage";
 import { EngagementListPage } from "@/portal/pages/engagements/EngagementListPage";
 import { EngagementFormPage } from "@/portal/pages/engagements/EngagementFormPage";
 import { EngagementDetailPage } from "@/portal/pages/engagements/EngagementDetailPage";
+import { MatchListPage } from "@/portal/pages/matches/MatchListPage";
+import { MatchCreatePage } from "@/portal/pages/matches/MatchCreatePage";
+import { MatchDetailPage } from "@/portal/pages/matches/MatchDetailPage";
 
 const ChartsPage = lazy(() => import("@/pages/investor/ChartsPage").then(m => ({ default: m.ChartsPage })));
 const SalesForecastPage = lazy(() => import("@/pages/investor/SalesForecastPage").then(m => ({ default: m.SalesForecastPage })));
@@ -108,6 +111,9 @@ export const router = createBrowserRouter([
           { path: "/portal/engagements/create", element: <EngagementFormPage /> },
           { path: "/portal/engagements/edit/:id", element: <EngagementFormPage /> },
           { path: "/portal/engagements/:id", element: <EngagementDetailPage /> },
+          { path: "/portal/matches", element: <MatchListPage /> },
+          { path: "/portal/matches/create", element: <MatchCreatePage /> },
+          { path: "/portal/matches/:id", element: <MatchDetailPage /> },
           { path: "/portal/map", element: <MapPage /> },
           { path: "/portal/pipeline", element: <PipelinePage /> },
           { path: "/portal/signing", element: <SigningListPage /> },

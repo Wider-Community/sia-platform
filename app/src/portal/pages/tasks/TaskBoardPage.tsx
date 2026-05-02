@@ -177,11 +177,13 @@ export function TaskBoardPage() {
 
   function confirmMove() {
     if (!pendingMove) return;
-    const newEngagementId = pendingMove.toColumnId === "__unassigned__" ? "" : pendingMove.toColumnId;
+    const isUnassigned = pendingMove.toColumnId === "__unassigned__";
+    const newEngagementId = isUnassigned ? "" : pendingMove.toColumnId;
+    const newEngagementName = isUnassigned ? "" : (engMap.get(pendingMove.toColumnId)?.title ?? "");
     updateTask({
       resource: "tasks",
       id: pendingMove.itemId,
-      values: { engagementId: newEngagementId },
+      values: { engagementId: newEngagementId, engagementName: newEngagementName },
     });
     setPendingMove(null);
   }

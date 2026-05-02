@@ -185,3 +185,24 @@ export const alertSchema = z.object({
 });
 
 export type Alert = z.infer<typeof alertSchema> & { id: string; createdAt: string; updatedAt: string };
+
+// ── Matches ──
+
+export const MATCH_CATEGORIES = ["investment", "partnership", "joint_venture", "technology", "regulatory"] as const;
+export const MATCH_STATUSES = ["pending", "accepted_a", "accepted_b", "mutual", "declined", "expired"] as const;
+
+export const matchSchema = z.object({
+  organizationAId: z.string().min(1, "First organization is required"),
+  organizationBId: z.string().min(1, "Second organization is required"),
+  status: z.enum(MATCH_STATUSES),
+  matchScore: z.number().min(0).max(100),
+  matchReason: z.string().min(1, "Match reason is required"),
+  category: z.enum(MATCH_CATEGORIES),
+  sector: z.string().optional(),
+  suggestedBy: z.string().min(1),
+  declinedBy: z.string().optional(),
+  declineReason: z.string().optional(),
+  expiresAt: z.string().optional(),
+});
+
+export type Match = z.infer<typeof matchSchema> & { id: string; createdAt: string; updatedAt: string };

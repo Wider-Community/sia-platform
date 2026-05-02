@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -13,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, FileSignature, AlertTriangle, CheckSquare, Activity } from "lucide-react";
+import { Building2, FileSignature, AlertTriangle, CheckSquare, Activity, Link2, Plus } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -60,6 +61,12 @@ export function PortalDashboardPage() {
     sorters: [{ field: "createdAt", order: "desc" }],
   });
   const slaRules = useList({ resource: "sla-rules", pagination: { mode: "off" } });
+  const matches = useList({
+    resource: "matches",
+    pagination: { current: 1, pageSize: 5 },
+    sorters: [{ field: "createdAt", order: "desc" }],
+  });
+  const allMatches = useList({ resource: "matches", pagination: { mode: "off" } });
 
   const orgData = orgs.result?.data ?? [];
   const taskData = tasks.result?.data ?? [];
@@ -90,6 +97,21 @@ export function PortalDashboardPage() {
   const tasksDueToday = taskData.filter(
     (t: BaseRecord) => t.status === "open" && (t.dueDate as string)?.startsWith(today),
   ).length;
+
+  // Match KPIs
+  const allMatchData = allMatches.result?.data ?? [];
+  const pendingMatchCount = allMatchData.filter((m: BaseRecord) => m.status === "pending").length;
+  const mutualMatchCount = allMatchData.filter((m: BaseRecord) => m.status === "mutual").length;
+  const recentMatches = matches.result?.data ?? [];
+
+  // Org lookup map for match display
+  const orgMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const o of orgData) {
+      map.set(o.id as string, o.name as string);
+    }
+    return map;
+  }, [orgData]);
 
   // Priority queue: orgs sorted by SLA status
   const priorityQueue = useMemo(() => {
@@ -182,7 +204,7 @@ export function PortalDashboardPage() {
 
       {/* Row 1: KPI Cards */}
       <motion.div
-        className="grid gap-4 md:grid-cols-4"
+        className="grid gap-4 md:grid-cols-3 lg:grid-cols-6"
         variants={staggerContainer}
         initial="hidden"
         animate="show"
@@ -221,6 +243,24 @@ export function PortalDashboardPage() {
             icon={CheckSquare}
             loading={tasks.query.isLoading}
             onClick={() => navigate("/portal/tasks")}
+          />
+        </motion.div>
+        <motion.div variants={staggerItem}>
+          <KpiCard
+            title="Pending Matches"
+            value={pendingMatchCount}
+            icon={Link2}
+            loading={allMatches.query.isLoading}
+            onClick={() => navigate("/portal/matches")}
+          />
+        </motion.div>
+        <motion.div variants={staggerItem}>
+          <KpiCard
+            title="Mutual Connections"
+            value={mutualMatchCount}
+            icon={Link2}
+            loading={allMatches.query.isLoading}
+            onClick={() => navigate("/portal/matches")}
           />
         </motion.div>
       </motion.div>
@@ -350,6 +390,77 @@ export function PortalDashboardPage() {
             </CardContent>
           </Card>
         </motion.div>
+      </motion.div>
+
+      {/* Recent Matches */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.55 }}
+      >
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg">
+              <TextReveal text="Recent Matches" delay={0.65} />
+            </CardTitle>
+            <Button variant="outline" size="sm" onClick={() => navigate("/portal/matches/create")}>
+              <Plus className="mr-2 h-4 w-4" /> Create Match
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {matches.query.isLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
+                ))}
+              </div>
+            ) : recentMatches.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Match</TableHead>
+                    <TableHead>Score</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentMatches.map((m: BaseRecord) => {
+                    const orgAName = orgMap.get(m.organizationAId as string) ?? (m.organizationAName as string) ?? "Org A";
+                    const orgBName = orgMap.get(m.organizationBId as string) ?? (m.organizationBName as string) ?? "Org B";
+                    const status = m.status as string;
+                    const statusColor: Record<string, string> = {
+                      pending: "bg-yellow-500 hover:bg-yellow-600 text-white",
+                      accepted_a: "bg-blue-500 hover:bg-blue-600 text-white",
+                      accepted_b: "bg-blue-500 hover:bg-blue-600 text-white",
+                      mutual: "bg-green-500 hover:bg-green-600 text-white",
+                      declined: "bg-red-500 hover:bg-red-600 text-white",
+                      expired: "bg-gray-500 hover:bg-gray-600 text-white",
+                    };
+                    return (
+                      <TableRow
+                        key={m.id as string}
+                        className="cursor-pointer transition-colors hover:bg-muted/50"
+                        onClick={() => navigate(`/portal/matches/${m.id}`)}
+                      >
+                        <TableCell className="font-medium">
+                          {orgAName} ↔ {orgBName}
+                        </TableCell>
+                        <TableCell>{m.score as number}</TableCell>
+                        <TableCell>
+                          <Badge className={statusColor[status] ?? ""}>
+                            {status?.replace(/_/g, " ")}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            ) : (
+              <EmptyState icon={Link2} title="No matches yet" description="Create a match to connect two organizations." action={{ label: "Create Match", onClick: () => navigate("/portal/matches/create") }} />
+            )}
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Activity Chart */}

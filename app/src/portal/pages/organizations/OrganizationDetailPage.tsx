@@ -1,6 +1,6 @@
 import { useOne, useList, useCreate, useDelete, useUpdate, useCustom } from "@refinedev/core";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { AnimatedTabContent } from "../../components/AnimatedTabContent";
 import { Button } from "@/components/ui/button";
 import { computeEngagementLevel } from "../../lib/sla-engine";
@@ -63,7 +63,24 @@ export function OrganizationDetailPage() {
   const events = useList({ resource: "activity-events", filters: [{ field: "organizationId", operator: "eq", value: id }], sorters: [{ field: "createdAt", order: "desc" }], pagination: { mode: "off" } });
   const engagements = useList({ resource: "engagements", filters: [{ field: "organizationId", operator: "eq", value: id }], pagination: { mode: "off" } });
   const tasks = useList({ resource: "tasks", filters: [{ field: "organizationId", operator: "eq", value: id }], pagination: { mode: "off" } });
+  const allMatches = useList({ resource: "matches", pagination: { mode: "off" } });
+  const allOrgs = useList({ resource: "organizations", pagination: { mode: "off" } });
   const engLevel = computeEngagementLevel(engagements.result?.data ?? []);
+
+  // Filter matches involving this org (client-side OR logic)
+  const orgMatches = useMemo(() => {
+    const data = allMatches.result?.data ?? [];
+    return data.filter((m: BaseRecord) => m.organizationAId === id || m.organizationBId === id);
+  }, [allMatches.result?.data, id]);
+
+  // Org name lookup map
+  const orgMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const o of (allOrgs.result?.data ?? [])) {
+      map.set(o.id as string, o.name as string);
+    }
+    return map;
+  }, [allOrgs.result?.data]);
 
   const { data: attributesData, isLoading: attributesLoading } = useCustom({
     url: `/api/nodes/${id}/attributes`,
@@ -208,6 +225,9 @@ export function OrganizationDetailPage() {
           </TabsTrigger>
           <TabsTrigger value="tasks">
             <CheckSquare className="mr-1 h-4 w-4" /> Tasks ({tasks.result?.total ?? 0})
+          </TabsTrigger>
+          <TabsTrigger value="matches">
+            <Link2 className="mr-1 h-4 w-4" /> Matches ({orgMatches.length})
           </TabsTrigger>
           <TabsTrigger value="activity">
             <Activity className="mr-1 h-4 w-4" /> Activity
@@ -671,6 +691,99 @@ export function OrganizationDetailPage() {
                 </Table>
               ) : (
                 <EmptyState icon={CheckSquare} title="No tasks yet" description="Create a task to track work for this organization." />
+              )}
+            </CardContent>
+          </Card>
+        </AnimatedTabContent>
+
+        {/* Matches */}
+        <AnimatedTabContent activeValue={activeTab} value="matches">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex justify-end mb-4">
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`/portal/matches/create?organizationAId=${id}&organizationAName=${encodeURIComponent(org?.name as string ?? "")}`}>
+                    <Plus className="mr-2 h-4 w-4" /> Create Match
+                  </Link>
+                </Button>
+              </div>
+              {allMatches.query.isLoading ? (
+                <TableSkeleton rows={3} columns={5} />
+              ) : orgMatches.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Other Organization</TableHead>
+                      <TableHead>Score</TableHead>
+                      <TableHead>Reason</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {orgMatches.map((m: BaseRecord) => {
+                      const isA = m.organizationAId === id;
+                      const otherId = isA ? (m.organizationBId as string) : (m.organizationAId as string);
+                      const otherName = orgMap.get(otherId) ?? (isA ? (m.organizationBName as string) : (m.organizationAName as string)) ?? otherId;
+                      const status = m.status as string;
+                      const statusColor: Record<string, string> = {
+                        pending: "bg-yellow-500 hover:bg-yellow-600 text-white",
+                        accepted_a: "bg-blue-500 hover:bg-blue-600 text-white",
+                        accepted_b: "bg-blue-500 hover:bg-blue-600 text-white",
+                        mutual: "bg-green-500 hover:bg-green-600 text-white",
+                        declined: "bg-red-500 hover:bg-red-600 text-white",
+                        expired: "bg-gray-500 hover:bg-gray-600 text-white",
+                      };
+                      const reason = (m.reason as string) ?? "";
+                      return (
+                        <TableRow key={m.id as string}>
+                          <TableCell>
+                            <Button
+                              variant="link"
+                              className="h-auto p-0"
+                              onClick={() => navigate(`/portal/organizations/${otherId}`)}
+                            >
+                              {otherName} <ArrowRight className="ml-1 h-3 w-3" />
+                            </Button>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="h-2 w-16 rounded-full bg-muted overflow-hidden">
+                                <div
+                                  className="h-full rounded-full bg-primary"
+                                  style={{ width: `${m.score as number}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-muted-foreground">{m.score as number}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-muted-foreground truncate block max-w-[200px]" title={reason}>
+                              {reason.length > 60 ? `${reason.slice(0, 60)}...` : reason || "—"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="capitalize">
+                              {(m.category as string)?.replace(/_/g, " ") ?? "—"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={statusColor[status] ?? ""}>
+                              {status?.replace(/_/g, " ")}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              ) : (
+                <EmptyState
+                  icon={Link2}
+                  title="No matches yet"
+                  description="Create a match to connect this organization with another."
+                  action={{ label: "Create Match", onClick: () => navigate(`/portal/matches/create?organizationAId=${id}&organizationAName=${encodeURIComponent(org?.name as string ?? "")}`) }}
+                />
               )}
             </CardContent>
           </Card>

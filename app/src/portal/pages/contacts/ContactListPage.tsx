@@ -20,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Users, Trash2 } from "lucide-react";
+import { Plus, Users, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { EmptyState } from "../../components/EmptyState";
 import type { BaseRecord } from "@refinedev/core";
@@ -28,6 +28,8 @@ import type { BaseRecord } from "@refinedev/core";
 export function ContactListPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const pageSize = 10;
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const { mutate: deleteContact } = useDelete();
 
@@ -63,6 +65,10 @@ export function ContactListPage() {
     });
   }, [contactsData, search]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages - 1);
+  const paged = filtered.slice(safePage * pageSize, (safePage + 1) * pageSize);
+
   return (
     <PageShell>
       <PageHeader
@@ -78,7 +84,7 @@ export function ContactListPage() {
       <Input
         placeholder="Search by name or email..."
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={(e) => { setSearch(e.target.value); setPage(0); }}
         className="max-w-xs"
       />
 
@@ -106,9 +112,9 @@ export function ContactListPage() {
                     ))}
                   </TableRow>
                 ))
-              ) : filtered.length > 0 ? (
+              ) : paged.length > 0 ? (
                 <AnimatePresence>
-                  {filtered.map((c: BaseRecord, index: number) => (
+                  {paged.map((c: BaseRecord, index: number) => (
                     <motion.tr
                       key={c.id as string}
                       initial={{ opacity: 0, y: 6 }}
@@ -169,6 +175,35 @@ export function ContactListPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {filtered.length > pageSize && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            {filtered.length} contact(s)
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={safePage === 0}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm">
+              Page {safePage + 1} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={safePage >= totalPages - 1}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}>
         <AlertDialogContent>
