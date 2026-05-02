@@ -105,10 +105,19 @@ export function ContactFormPage() {
   };
 
   if (isEdit && contactQuery?.isLoading) {
+    return <PageShell loading={true}>{null}</PageShell>;
+  }
+
+  if (isEdit && !contactQuery?.isLoading && !contactQuery?.data?.data) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <PageShell>
+        <div className="flex h-64 flex-col items-center justify-center gap-4">
+          <p className="text-muted-foreground">Contact not found</p>
+          <Button variant="outline" onClick={() => navigate("/portal/contacts")}>
+            Back to Contacts
+          </Button>
+        </div>
+      </PageShell>
     );
   }
 

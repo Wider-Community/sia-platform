@@ -10,7 +10,8 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnimatedTabContent } from "../../components/AnimatedTabContent";
-import { Plus } from "lucide-react";
+import { Plus, Layers } from "lucide-react";
+import { EmptyState } from "../../components/EmptyState";
 import {
   Select,
   SelectContent,
@@ -401,49 +402,53 @@ export function PipelinePage() {
 
         {/* List View */}
         <AnimatedTabContent activeValue={activeTab} value="list" className="mt-4">
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Engagement</TableHead>
-                  <TableHead>Organization</TableHead>
-                  <TableHead>Stage</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Target Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEngagements.map((eng) => {
-                  const cfg = STAGE_CONFIG[eng.stage];
-                  return (
-                    <TableRow
-                      key={eng.id}
-                      className="cursor-pointer transition-colors hover:bg-muted/50"
-                      onClick={() => navigate(`/portal/engagements/${eng.id}`)}
-                    >
-                      <TableCell className="font-medium">{eng.title}</TableCell>
-                      <TableCell>{orgMap.get(eng.organizationId) ?? "—"}</TableCell>
-                      <TableCell>
-                        <Badge style={{ backgroundColor: cfg?.color, color: "white", borderColor: "transparent" }}>
-                          {cfg?.title ?? eng.stage}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="capitalize">{eng.category.replace(/_/g, " ")}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={priorityColor[eng.priority] ?? "outline"}>{eng.priority}</Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {eng.targetDate ? formatDate(eng.targetDate) : "—"}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+          {filteredEngagements.length > 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Engagement</TableHead>
+                    <TableHead>Organization</TableHead>
+                    <TableHead>Stage</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Priority</TableHead>
+                    <TableHead>Target Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredEngagements.map((eng) => {
+                    const cfg = STAGE_CONFIG[eng.stage];
+                    return (
+                      <TableRow
+                        key={eng.id}
+                        className="cursor-pointer transition-colors hover:bg-muted/50"
+                        onClick={() => navigate(`/portal/engagements/${eng.id}`)}
+                      >
+                        <TableCell className="font-medium">{eng.title}</TableCell>
+                        <TableCell>{orgMap.get(eng.organizationId) ?? "—"}</TableCell>
+                        <TableCell>
+                          <Badge style={{ backgroundColor: cfg?.color, color: "white", borderColor: "transparent" }}>
+                            {cfg?.title ?? eng.stage}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="capitalize">{eng.category.replace(/_/g, " ")}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={priorityColor[eng.priority] ?? "outline"}>{eng.priority}</Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {eng.targetDate ? formatDate(eng.targetDate) : "—"}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <EmptyState icon={Layers} title="No engagements found" description="No engagements match the current filters. Try adjusting your filters or create a new engagement." />
+          )}
         </AnimatedTabContent>
       </Tabs>
 

@@ -9,9 +9,22 @@ import { AnimatedTabContent } from "../../components/AnimatedTabContent";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "../../components/EmptyState";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Building2,
   CheckCircle2,
   Clock,
   Download,
+  Layers,
   Link as LinkIcon,
   RefreshCw,
   Send,
@@ -62,6 +75,20 @@ export function SigningDetailPage() {
     id: id!,
   });
   const req = reqQuery.data?.data;
+
+  const { query: orgQuery } = useOne({
+    resource: "organizations",
+    id: (req?.organizationId as string) ?? "",
+    queryOptions: { enabled: !!req?.organizationId },
+  });
+  const orgName = (orgQuery.data?.data?.name as string) ?? "";
+
+  const { query: engQuery } = useOne({
+    resource: "engagements",
+    id: (req?.engagementId as string) ?? "",
+    queryOptions: { enabled: !!req?.engagementId },
+  });
+  const engTitle = (engQuery.data?.data?.title as string) ?? "";
 
   const { result: signersData, query: signersQuery } = useList({
     resource: "signers",
@@ -200,13 +227,59 @@ export function SigningDetailPage() {
               Download PDF
             </Button>
             {(status === "sent" || status === "partially_signed") && (
-              <AnimatedButton variant="destructive" onClick={handleCancel}>
-                Cancel Request
-              </AnimatedButton>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <AnimatedButton variant="destructive">
+                    Cancel Request
+                  </AnimatedButton>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Cancel signing request?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will cancel the signing request. All pending signers will no longer be able to sign. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Keep Request</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleCancel}>
+                      Cancel Request
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
         }
       />
+
+      {(req.organizationId || req.engagementId) && (
+        <div className="flex items-center gap-4 text-sm">
+          {req.organizationId && (
+            <Button
+              variant="link"
+              className="h-auto p-0"
+              onClick={() => navigate(`/portal/organizations/${req.organizationId}`)}
+            >
+              <Building2 className="mr-1 h-3 w-3" />
+              {orgName || (req.organizationId as string)}
+            </Button>
+          )}
+          {req.engagementId && (
+            <>
+              <span className="text-muted-foreground">/</span>
+              <Button
+                variant="link"
+                className="h-auto p-0"
+                onClick={() => navigate(`/portal/engagements/${req.engagementId}`)}
+              >
+                <Layers className="mr-1 h-3 w-3" />
+                {engTitle || (req.engagementId as string)}
+              </Button>
+            </>
+          )}
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>

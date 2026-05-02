@@ -23,25 +23,9 @@ import {
 import { PageShell } from "../../components/PageShell";
 import { PageHeader } from "../../components/PageHeader";
 import { LocationEditor } from "../../components/LocationEditor";
+import { organizationSchema } from "../../schemas";
 
-const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  type: z.enum(["partner", "investor", "vendor", "client"]),
-  status: z.enum(["active", "inactive", "prospect"]),
-  locations: z.array(z.object({
-    id: z.string(),
-    country: z.string().min(1),
-    countryName: z.string().min(1),
-    city: z.string().min(1),
-    lat: z.number(),
-    lng: z.number(),
-    isDefault: z.boolean(),
-  })).min(1, "At least one location is required"),
-  website: z.string().url("Invalid URL").optional().or(z.literal("")),
-  description: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof organizationSchema>;
 
 export function OrganizationFormPage() {
   const navigate = useNavigate();
@@ -64,7 +48,7 @@ export function OrganizationFormPage() {
       redirect: "list",
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(formSchema) as any,
+    resolver: zodResolver(organizationSchema) as any,
     defaultValues: {
       name: "",
       type: "partner",

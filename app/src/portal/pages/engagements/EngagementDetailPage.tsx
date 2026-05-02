@@ -1,4 +1,4 @@
-import { useOne, useList, useDelete } from "@refinedev/core";
+import { useOne, useList, useCreate, useDelete } from "@refinedev/core";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
 import { AnimatedTabContent } from "../../components/AnimatedTabContent";
@@ -37,6 +37,7 @@ import {
   Tag,
 } from "lucide-react";
 import type { BaseRecord } from "@refinedev/core";
+import { Send } from "lucide-react";
 import { VerticalTimeline, type TimelineEvent } from "../../components/VerticalTimeline";
 import { PageShell } from "../../components/PageShell";
 import { PageHeader } from "../../components/PageHeader";
@@ -111,8 +112,26 @@ export function EngagementDetailPage() {
     pagination: { mode: "off" },
   });
 
+  const notes = useList({
+    resource: "notes",
+    filters: [{ field: "engagementId", operator: "eq", value: id }],
+    sorters: [{ field: "createdAt", order: "desc" }],
+    pagination: { mode: "off" },
+  });
+
+  const { mutate: createNote } = useCreate();
   const { mutate: deleteEng } = useDelete();
   const [activeTab, setActiveTab] = useState("overview");
+  const [noteText, setNoteText] = useState("");
+
+  const handleAddNote = () => {
+    if (!noteText.trim()) return;
+    createNote({
+      resource: "notes",
+      values: { content: noteText, createdBy: "user-1", organizationId: (eng?.organizationId as string) ?? "", engagementId: id },
+    });
+    setNoteText("");
+  };
 
   if (engQuery.isLoading) {
     return <PageShell loading={true}>{null}</PageShell>;
@@ -158,7 +177,13 @@ export function EngagementDetailPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete engagement?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently delete &ldquo;{eng.title as string}&rdquo;. This action cannot be undone.
+                    {(() => {
+                      const taskCount = tasks.result?.data?.length ?? 0;
+                      if (taskCount > 0) {
+                        return `This engagement has ${taskCount} task${taskCount !== 1 ? "s" : ""}. Deleting it will remove all related data. This action cannot be undone.`;
+                      }
+                      return `This will permanently delete "${eng.title as string}". This action cannot be undone.`;
+                    })()}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -330,12 +355,35 @@ export function EngagementDetailPage() {
         {/* Notes */}
         <AnimatedTabContent activeValue={activeTab} value="notes">
           <Card>
-            <CardContent className="pt-6">
-              <EmptyState
-                icon={StickyNote}
-                title="No notes yet"
-                description="Notes will appear here when linked to this engagement."
-              />
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex gap-2">
+                <Textarea
+                  placeholder="Add a note..."
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  rows={2}
+                  className="flex-1"
+                />
+                <AnimatedButton onClick={handleAddNote} disabled={!noteText.trim()} className="self-end">
+                  <Send className="mr-2 h-4 w-4" /> Add
+                </AnimatedButton>
+              </div>
+              {notes.query.isLoading ? (
+                <Skeleton className="h-32 w-full" />
+              ) : (notes.result?.data?.length ?? 0) > 0 ? (
+                <div className="space-y-3">
+                  {notes.result!.data.map((n: BaseRecord) => (
+                    <div key={n.id as string} className="rounded-md border p-3">
+                      <p className="text-sm">{n.content as string}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {new Date(n.createdAt as string).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState icon={StickyNote} title="No notes yet" description="Add a note to keep track of important details." />
+              )}
             </CardContent>
           </Card>
         </AnimatedTabContent>
@@ -346,7 +394,7 @@ export function EngagementDetailPage() {
             <CardContent className="pt-6">
               {events.query.isLoading ? (
                 <Skeleton className="h-32 w-full" />
-              ) : (
+              ) : (events.result?.data?.length ?? 0) > 0 ? (
                 <VerticalTimeline
                   events={(events.result?.data ?? []).map((e: BaseRecord) => ({
                     id: e.id as string,
@@ -356,6 +404,8 @@ export function EngagementDetailPage() {
                     variant: (e.action as string) === "deleted" ? "destructive" as const : "default" as const,
                   } satisfies TimelineEvent))}
                 />
+              ) : (
+                <EmptyState icon={Activity} title="No activity yet" description="Activity will appear here as events are recorded for this engagement." />
               )}
             </CardContent>
           </Card>

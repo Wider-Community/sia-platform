@@ -11,6 +11,7 @@ import {
 import { mujarradDataProvider } from "./providers/mujarrad-data-provider";
 import { authProvider as mujarradAuthProvider } from "./providers/auth-provider";
 import { PortalLayout } from "./layouts/PortalLayout";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
@@ -103,7 +104,9 @@ export function PortalAuthenticated() {
       key="portal-auth"
       fallback={<Navigate to="/portal/login" />}
     >
-      <PortalLayout />
+      <ErrorBoundary>
+        <PortalLayout />
+      </ErrorBoundary>
     </Authenticated>
   );
 }

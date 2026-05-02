@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { AnimatedButton } from "../../components/AnimatedButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { AnimatedInput } from "../../components/AnimatedInput";
 import { AnimatedTextarea } from "../../components/AnimatedTextarea";
 import {
@@ -18,24 +17,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
 import { PageShell } from "../../components/PageShell";
 import { PageHeader } from "../../components/PageHeader";
+import { taskSchema } from "../../schemas";
 import type { BaseRecord } from "@refinedev/core";
 
-const formSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().optional(),
-  organizationId: z.string().optional(),
-  organizationName: z.string().optional(),
-  engagementId: z.string().optional(),
-  engagementName: z.string().optional(),
-  dueDate: z.string().min(1, "Due date is required"),
-  status: z.enum(["open", "done"]),
-  priority: z.enum(["low", "medium", "high"]),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof taskSchema>;
 
 export function TaskCreatePage() {
   const navigate = useNavigate();
@@ -65,7 +52,7 @@ export function TaskCreatePage() {
       redirect: "list",
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(formSchema) as any,
+    resolver: zodResolver(taskSchema) as any,
     defaultValues: {
       title: "",
       description: "",
@@ -103,8 +90,10 @@ export function TaskCreatePage() {
     setValue("engagementName", (eng?.title as string) ?? "");
   };
 
+  const isLoadingDeps = orgs.query.isLoading || engagements.query.isLoading;
+
   return (
-    <PageShell>
+    <PageShell loading={isLoadingDeps}>
       <div className="mx-auto max-w-2xl space-y-6">
       <PageHeader title="New Task" backTo="/portal/tasks" />
 

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCreate } from "@refinedev/core";
+import { useCreate, useList } from "@refinedev/core";
+import { toast } from "sonner";
 import { DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { Button } from "@/components/ui/button";
 import { AnimatedButton } from "../../components/AnimatedButton";
@@ -40,6 +41,14 @@ import {
   type FieldRect,
 } from "../../components/SignatureFieldOverlay";
 import { createBlankPdf } from "../../lib/pdf-assembly";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { BaseRecord } from "@refinedev/core";
 
 const SIGNER_COLORS = [
   "#C8A951",
@@ -68,9 +77,25 @@ export function NewSigningRequestPage() {
   // Step 1
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
+  const [organizationId, setOrganizationId] = useState("");
+  const [engagementId, setEngagementId] = useState("");
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfFileName, setPdfFileName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const orgs = useList({
+    resource: "organizations",
+    pagination: { mode: "off" },
+  });
+
+  const engagements = useList({
+    resource: "engagements",
+    filters: organizationId
+      ? [{ field: "organizationId", operator: "eq", value: organizationId }]
+      : [],
+    pagination: { mode: "off" },
+    queryOptions: { enabled: !!organizationId },
+  });
 
   // Step 2
   const [currentPage, setCurrentPage] = useState(1);
@@ -217,7 +242,10 @@ export function NewSigningRequestPage() {
           pdfFileName,
           message,
           createdBy: "user-1",
+          ...(organizationId ? { organizationId } : {}),
+          ...(engagementId ? { engagementId } : {}),
         },
+        successNotification: false,
       });
 
       const requestId = (reqResult.data as { id: string }).id;
@@ -240,6 +268,7 @@ export function NewSigningRequestPage() {
             color: s.color,
             expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           },
+          successNotification: false,
         });
         signerIdMap[s.tempId] = (signerResult.data as { id: string }).id;
         links.push({ name: s.name, link: `${appUrl}/sign/${token}` });
@@ -259,13 +288,15 @@ export function NewSigningRequestPage() {
             widthPct: f.widthPct,
             heightPct: f.heightPct,
           },
+          successNotification: false,
         });
       }
 
+      toast.success("Signing request created successfully");
       setCreatedLinks(links);
       setCreatedRequestId(requestId);
     } catch (err) {
-      console.error("Failed to create signing request:", err);
+      toast.error("Failed to create signing request");
     } finally {
       setSubmitting(false);
     }
@@ -329,6 +360,48 @@ export function NewSigningRequestPage() {
                 placeholder="Optional message..."
                 rows={3}
               />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Organization</Label>
+                <Select
+                  value={organizationId}
+                  onValueChange={(val) => {
+                    setOrganizationId(val);
+                    setEngagementId("");
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select organization (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(orgs.result?.data ?? []).map((o: BaseRecord) => (
+                      <SelectItem key={o.id as string} value={o.id as string}>
+                        {o.name as string}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Engagement</Label>
+                <Select
+                  value={engagementId}
+                  onValueChange={setEngagementId}
+                  disabled={!organizationId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={organizationId ? "Select engagement (optional)" : "Select an organization first"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(engagements.result?.data ?? []).map((e: BaseRecord) => (
+                      <SelectItem key={e.id as string} value={e.id as string}>
+                        {e.title as string}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>PDF Document *</Label>

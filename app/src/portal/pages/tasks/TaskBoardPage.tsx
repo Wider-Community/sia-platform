@@ -236,7 +236,7 @@ export function TaskBoardPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-sm text-muted-foreground">Loading...</div>
+        <PageShell loading={true}>{null}</PageShell>
       ) : (
         <KanbanBoard<Task>
           columns={columns}

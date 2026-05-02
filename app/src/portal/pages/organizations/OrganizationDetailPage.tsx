@@ -1,4 +1,4 @@
-import { useOne, useList, useCreate, useDelete, useCustom } from "@refinedev/core";
+import { useOne, useList, useCreate, useDelete, useUpdate, useCustom } from "@refinedev/core";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
 import { AnimatedTabContent } from "../../components/AnimatedTabContent";
@@ -41,6 +41,7 @@ import {
   Mail,
   Link2,
   ArrowRight,
+  CheckSquare,
 } from "lucide-react";
 import type { BaseRecord } from "@refinedev/core";
 import { FileUploader } from "../../components/FileUploader";
@@ -61,6 +62,7 @@ export function OrganizationDetailPage() {
   const notes = useList({ resource: "notes", filters: [{ field: "organizationId", operator: "eq", value: id }], sorters: [{ field: "createdAt", order: "desc" }], pagination: { mode: "off" } });
   const events = useList({ resource: "activity-events", filters: [{ field: "organizationId", operator: "eq", value: id }], sorters: [{ field: "createdAt", order: "desc" }], pagination: { mode: "off" } });
   const engagements = useList({ resource: "engagements", filters: [{ field: "organizationId", operator: "eq", value: id }], pagination: { mode: "off" } });
+  const tasks = useList({ resource: "tasks", filters: [{ field: "organizationId", operator: "eq", value: id }], pagination: { mode: "off" } });
   const engLevel = computeEngagementLevel(engagements.result?.data ?? []);
 
   const { data: attributesData, isLoading: attributesLoading } = useCustom({
@@ -76,11 +78,15 @@ export function OrganizationDetailPage() {
   ) ?? [];
 
   const { mutate: createNote } = useCreate();
+  const { mutate: updateNote } = useUpdate();
+  const { mutate: deleteNote } = useDelete();
   const { mutate: deleteFile } = useDelete();
   const { mutate: deleteOrg } = useDelete();
   const [noteText, setNoteText] = useState("");
   const [activeTab, setActiveTab] = useState("overview");
   const [emailOpen, setEmailOpen] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingNoteText, setEditingNoteText] = useState("");
 
   const primaryContact = contacts.result?.data?.[0];
   const primaryEmail = (primaryContact?.email as string) ?? "";
@@ -144,7 +150,22 @@ export function OrganizationDetailPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete organization?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently delete {org?.name as string}. This action cannot be undone.
+                    {(() => {
+                      const contactCount = contacts.result?.data?.length ?? 0;
+                      const engCount = engagements.result?.data?.length ?? 0;
+                      const taskCount = tasks.result?.data?.length ?? 0;
+                      const fileCount = files.result?.data?.length ?? 0;
+                      const hasRelated = contactCount + engCount + taskCount + fileCount > 0;
+                      if (hasRelated) {
+                        const parts: string[] = [];
+                        if (contactCount > 0) parts.push(`${contactCount} contact${contactCount !== 1 ? "s" : ""}`);
+                        if (engCount > 0) parts.push(`${engCount} engagement${engCount !== 1 ? "s" : ""}`);
+                        if (taskCount > 0) parts.push(`${taskCount} task${taskCount !== 1 ? "s" : ""}`);
+                        if (fileCount > 0) parts.push(`${fileCount} file${fileCount !== 1 ? "s" : ""}`);
+                        return `This organization has ${parts.join(", ")}. Deleting it will remove all related data. This action cannot be undone.`;
+                      }
+                      return `This will permanently delete ${org?.name as string}. This action cannot be undone.`;
+                    })()}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -184,6 +205,9 @@ export function OrganizationDetailPage() {
           </TabsTrigger>
           <TabsTrigger value="notes">
             <StickyNote className="mr-1 h-4 w-4" /> Notes ({notes.result?.total ?? 0})
+          </TabsTrigger>
+          <TabsTrigger value="tasks">
+            <CheckSquare className="mr-1 h-4 w-4" /> Tasks ({tasks.result?.total ?? 0})
           </TabsTrigger>
           <TabsTrigger value="activity">
             <Activity className="mr-1 h-4 w-4" /> Activity
@@ -516,15 +540,137 @@ export function OrganizationDetailPage() {
                 <div className="space-y-3">
                   {notes.result!.data.map((n: BaseRecord) => (
                     <div key={n.id as string} className="rounded-md border p-3">
-                      <p className="text-sm">{n.content as string}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {new Date(n.createdAt as string).toLocaleString()}
-                      </p>
+                      {editingNoteId === (n.id as string) ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={editingNoteText}
+                            onChange={(e) => setEditingNoteText(e.target.value)}
+                            rows={3}
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                updateNote({
+                                  resource: "notes",
+                                  id: n.id as string,
+                                  values: { content: editingNoteText },
+                                });
+                                setEditingNoteId(null);
+                              }}
+                              disabled={!editingNoteText.trim()}
+                            >
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setEditingNoteId(null)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <p className="text-sm">{n.content as string}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {new Date(n.createdAt as string).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              title="Edit note"
+                              onClick={() => {
+                                setEditingNoteId(n.id as string);
+                                setEditingNoteText(n.content as string);
+                              }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  title="Delete note"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete note?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete this note. This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() =>
+                                      deleteNote({ resource: "notes", id: n.id as string })
+                                    }
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
               ) : (
                 <EmptyState icon={StickyNote} title="No notes yet" description="Add a note to keep track of important details." />
+              )}
+            </CardContent>
+          </Card>
+        </AnimatedTabContent>
+
+        {/* Tasks */}
+        <AnimatedTabContent activeValue={activeTab} value="tasks">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex justify-end mb-4">
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`/portal/tasks/create?organizationId=${id}&organizationName=${encodeURIComponent(org?.name as string ?? "")}`}>
+                    <Plus className="mr-2 h-4 w-4" /> New Task
+                  </Link>
+                </Button>
+              </div>
+              {tasks.query.isLoading ? (
+                <TableSkeleton rows={3} columns={4} />
+              ) : (tasks.result?.data?.length ?? 0) > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Due Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tasks.result!.data.map((t: BaseRecord) => (
+                      <TableRow key={t.id as string} className="cursor-pointer" onClick={() => navigate(`/portal/tasks/${t.id}`)}>
+                        <TableCell className="font-medium">{t.title as string}</TableCell>
+                        <TableCell><Badge variant={(t.status as string) === "done" ? "secondary" : "default"}>{t.status as string}</Badge></TableCell>
+                        <TableCell><Badge variant={(t.priority as string) === "high" ? "destructive" : "outline"}>{t.priority as string}</Badge></TableCell>
+                        <TableCell>{t.dueDate ? new Date(t.dueDate as string).toLocaleDateString() : "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <EmptyState icon={CheckSquare} title="No tasks yet" description="Create a task to track work for this organization." />
               )}
             </CardContent>
           </Card>
@@ -536,7 +682,7 @@ export function OrganizationDetailPage() {
             <CardContent className="pt-6">
               {events.query.isLoading ? (
                 <Skeleton className="h-32 w-full" />
-              ) : (
+              ) : (events.result?.data?.length ?? 0) > 0 ? (
                 <VerticalTimeline
                   events={(events.result?.data ?? []).map((e: BaseRecord) => ({
                     id: e.id as string,
@@ -546,6 +692,8 @@ export function OrganizationDetailPage() {
                     variant: (e.action as string) === "deleted" ? "destructive" as const : "default" as const,
                   } satisfies TimelineEvent))}
                 />
+              ) : (
+                <EmptyState icon={Activity} title="No activity yet" description="Activity will appear here as you interact with this organization." />
               )}
             </CardContent>
           </Card>

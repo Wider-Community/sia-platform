@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, FileSignature, AlertTriangle, CheckSquare } from "lucide-react";
+import { Building2, FileSignature, AlertTriangle, CheckSquare, Activity } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -24,6 +24,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { BaseRecord } from "@refinedev/core";
+import { EmptyState } from "../../components/EmptyState";
 import { KpiCard } from "../../components/KpiCard";
 import { VerticalTimeline, type TimelineEvent } from "../../components/VerticalTimeline";
 import { PageShell } from "../../components/PageShell";
@@ -272,7 +273,7 @@ export function PortalDashboardPage() {
                 </TableBody>
               </Table>
             ) : (
-              <p className="text-sm text-muted-foreground">No organizations to display.</p>
+              <EmptyState icon={Building2} title="No organizations yet" description="Add an organization to start tracking your pipeline." action={{ label: "Add Organization", onClick: () => navigate("/portal/organizations/create") }} />
             )}
           </CardContent>
         </Card>
@@ -325,7 +326,7 @@ export function PortalDashboardPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No open tasks.</p>
+                <EmptyState icon={CheckSquare} title="No open tasks" description="All caught up! Create a task to track your next action." />
               )}
             </CardContent>
           </Card>
@@ -341,8 +342,10 @@ export function PortalDashboardPage() {
             <CardContent>
               {events.query.isLoading ? (
                 <Skeleton className="h-32 w-full" />
-              ) : (
+              ) : timelineEvents.length > 0 ? (
                 <VerticalTimeline events={timelineEvents} />
+              ) : (
+                <EmptyState icon={Activity} title="No recent activity" description="Activity will appear here as you interact with the platform." />
               )}
             </CardContent>
           </Card>

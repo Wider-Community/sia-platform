@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useList, useUpdate } from "@refinedev/core";
 import { useState, useCallback } from "react";
+import { toast } from "sonner";
 import { Refine } from "@refinedev/core";
 import routerProvider from "@refinedev/react-router";
 import {
@@ -166,6 +167,7 @@ function PublicSigningPageInner() {
           resource: "signature-fields",
           id: fieldId,
           values: { signedImageUrl: imageUrl },
+          successNotification: false,
         });
       }
 
@@ -174,6 +176,7 @@ function PublicSigningPageInner() {
         resource: "signers",
         id: signer.id as string,
         values: { status: "signed", signedAt: new Date().toISOString() },
+        successNotification: false,
       });
 
       // Check if all signers have signed
@@ -189,18 +192,20 @@ function PublicSigningPageInner() {
           resource: "signing-requests",
           id: signingRequestId,
           values: { status: "completed" },
+          successNotification: false,
         });
       } else if (signingRequestId) {
         await updateRequest({
           resource: "signing-requests",
           id: signingRequestId,
           values: { status: "partially_signed" },
+          successNotification: false,
         });
       }
 
       setCompleted(true);
     } catch (err) {
-      console.error("Failed to submit signatures:", err);
+      toast.error("Failed to submit signatures");
     } finally {
       setSubmitting(false);
     }

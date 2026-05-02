@@ -10,6 +10,16 @@ import { AnimatedButton } from "../../components/AnimatedButton";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Plus, Users, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { EmptyState } from "../../components/EmptyState";
@@ -18,6 +28,7 @@ import type { BaseRecord } from "@refinedev/core";
 export function ContactListPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const { mutate: deleteContact } = useDelete();
 
   const { result: contactsResult, query: contactsQuery } = useList({
@@ -133,9 +144,7 @@ export function ContactListPage() {
                           size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (confirm(`Delete ${c.firstName} ${c.lastName}?`)) {
-                              deleteContact({ resource: "contacts", id: c.id as string });
-                            }
+                            setPendingDeleteId(c.id as string);
                           }}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -160,6 +169,35 @@ export function ContactListPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete contact?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete{" "}
+              {(() => {
+                const c = (contactsData?.data ?? []).find((c) => (c.id as string) === pendingDeleteId);
+                return c ? `${c.firstName} ${c.lastName}` : "this contact";
+              })()}
+              . This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingDeleteId) {
+                  deleteContact({ resource: "contacts", id: pendingDeleteId });
+                }
+                setPendingDeleteId(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageShell>
   );
 }
