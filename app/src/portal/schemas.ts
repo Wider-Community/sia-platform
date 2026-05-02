@@ -14,7 +14,7 @@ export type OrgLocation = z.infer<typeof locationSchema>;
 
 export const organizationSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  type: z.enum(["partner", "investor", "vendor", "client", "market_entity"], { message: "Type is required" }),
+  type: z.enum(["partner", "investor", "vendor", "client"], { message: "Type is required" }),
   status: z.enum(["active", "inactive", "prospect"], { message: "Status is required" }),
   locations: z.array(locationSchema).min(1, "At least one location is required").refine(
     (locs) => locs.filter((l) => l.isDefault).length === 1,
@@ -118,6 +118,28 @@ export const signerSchema = z.object({
 export type SigningRequest = z.infer<typeof signingRequestSchema> & { id: string; createdAt: string; updatedAt: string };
 export type SignatureField = z.infer<typeof signatureFieldSchema> & { id: string; createdAt: string };
 export type Signer = z.infer<typeof signerSchema> & { id: string; createdAt: string };
+
+// ── Engagements ──
+
+export const ENGAGEMENT_STAGES = ["prospect", "in_progress", "negotiating", "formalized", "active", "completed", "dormant"] as const;
+export const ENGAGEMENT_CATEGORIES = ["deal", "project", "opportunity", "initiative", "regulatory", "diplomatic"] as const;
+
+export const engagementSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  organizationId: z.string().min(1, "Organization is required"),
+  stage: z.enum(ENGAGEMENT_STAGES),
+  category: z.enum(ENGAGEMENT_CATEGORIES),
+  description: z.string().optional(),
+  priority: z.enum(["low", "medium", "high", "critical"]).default("medium"),
+  assignedTo: z.string().optional(),
+  startDate: z.string().optional(),
+  targetDate: z.string().optional(),
+  value: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  createdBy: z.string().min(1),
+});
+
+export type Engagement = z.infer<typeof engagementSchema> & { id: string; createdAt: string; updatedAt: string };
 
 // ── Tasks ──
 

@@ -60,6 +60,19 @@ export const ENTITY_REGISTRY: Record<string, EntityDef> = {
       },
     ],
   },
+  engagements: {
+    nodeType: "REGULAR",
+    titleField: "title",
+    requiredFields: ["title", "organizationId", "stage", "category", "createdBy"],
+    relationships: [
+      {
+        targetResource: "organizations",
+        fkField: "organizationId",
+        verb: "belongs_to",
+        direction: "outgoing",
+      },
+    ],
+  },
   tasks: {
     nodeType: "REGULAR",
     titleField: "title",

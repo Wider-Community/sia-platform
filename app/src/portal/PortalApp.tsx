@@ -1,7 +1,7 @@
 import { Refine, Authenticated } from "@refinedev/core";
 import routerProvider from "@refinedev/react-router";
 import { Outlet, Navigate } from "react-router-dom";
-import { Building2, Users, FileSignature, CheckSquare, Settings } from "lucide-react";
+import { Building2, Users, FileSignature, CheckSquare, Settings, Layers } from "lucide-react";
 import {
   mockDataProvider,
   mockAuthProvider,
@@ -50,6 +50,14 @@ export function PortalApp() {
           edit: "/portal/contacts/edit/:id",
           show: "/portal/contacts/:id",
           meta: { label: "Contacts", icon: <Users /> },
+        },
+        {
+          name: "engagements",
+          list: "/portal/engagements",
+          create: "/portal/engagements/create",
+          edit: "/portal/engagements/edit/:id",
+          show: "/portal/engagements/:id",
+          meta: { label: "Engagements", icon: <Layers /> },
         },
         { name: "files", meta: { hide: true } },
         { name: "notes", meta: { hide: true } },
