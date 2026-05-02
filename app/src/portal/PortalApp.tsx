@@ -67,6 +67,8 @@ export function PortalApp() {
           name: "tasks",
           list: "/portal/tasks",
           create: "/portal/tasks/create",
+          show: "/portal/tasks/:id",
+          edit: "/portal/tasks/edit/:id",
           meta: { label: "Tasks", icon: <CheckSquare /> },
         },
         { name: "sla-rules", meta: { hide: true } },

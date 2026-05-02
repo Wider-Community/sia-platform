@@ -1,12 +1,19 @@
 import { useState, useMemo } from "react";
 import { useList, useUpdate } from "@refinedev/core";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { PageShell } from "../../components/PageShell";
 import { PageHeader } from "../../components/PageHeader";
 import { KanbanBoard, type KanbanColumn } from "@/portal/components/KanbanBoard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,12 +51,16 @@ function formatDate(dateStr: string): string {
   });
 }
 
-function TaskCard({ task }: { task: Task }) {
+type GroupByMode = "engagement" | "status" | "priority";
+
+function TaskCard({ task, onClick }: { task: Task; onClick: () => void }) {
   return (
     <motion.div
       layout
       whileHover={{ scale: 1.03, y: -2 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      onClick={onClick}
+      className="cursor-pointer"
     >
       <Card className="shadow-sm transition-shadow duration-200 hover:shadow-md">
         <CardContent className="p-3 space-y-1.5">
@@ -74,7 +85,9 @@ function TaskCard({ task }: { task: Task }) {
 }
 
 export function TaskBoardPage() {
+  const navigate = useNavigate();
   const [showDone, setShowDone] = useState(false);
+  const [groupBy, setGroupBy] = useState<GroupByMode>("engagement");
 
   // Fetch tasks
   const { result: tasksResult, query: tasksQuery } = useList<Task>({
@@ -110,8 +123,28 @@ export function TaskBoardPage() {
     return m;
   }, [allEngagements]);
 
-  // Build columns: "unassigned" first, then one per engagement
+  // Build columns based on group-by mode
   const columns: KanbanColumn<Task>[] = useMemo(() => {
+    if (groupBy === "status") {
+      return [
+        { id: "open", title: "Open", color: "#3b82f6", items: filteredTasks.filter((t) => t.status === "open") },
+        { id: "done", title: "Done", color: "#22c55e", items: filteredTasks.filter((t) => t.status === "done") },
+      ];
+    }
+
+    if (groupBy === "priority") {
+      const priorities = [
+        { id: "high", title: "High", color: "#ef4444" },
+        { id: "medium", title: "Medium", color: "#f59e0b" },
+        { id: "low", title: "Low", color: "#94a3b8" },
+      ];
+      return priorities.map((p) => ({
+        ...p,
+        items: filteredTasks.filter((t) => t.priority === p.id),
+      }));
+    }
+
+    // Default: group by engagement — show ALL engagements even if empty
     const unassigned: KanbanColumn<Task> = {
       id: "__unassigned__",
       title: "Unassigned",
@@ -130,10 +163,16 @@ export function TaskBoardPage() {
     });
 
     return [unassigned, ...engColumns];
-  }, [filteredTasks, allEngagements]);
+  }, [filteredTasks, allEngagements, groupBy]);
 
   function handleDragEnd(itemId: string, _from: string, to: string) {
-    setPendingMove({ itemId, toColumnId: to });
+    if (groupBy === "engagement") {
+      setPendingMove({ itemId, toColumnId: to });
+    } else if (groupBy === "status") {
+      updateTask({ resource: "tasks", id: itemId, values: { status: to } });
+    } else if (groupBy === "priority") {
+      updateTask({ resource: "tasks", id: itemId, values: { priority: to } });
+    }
   }
 
   function confirmMove() {
@@ -171,7 +210,20 @@ export function TaskBoardPage() {
         }
       />
 
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Group by:</span>
+          <Select value={groupBy} onValueChange={(v) => setGroupBy(v as GroupByMode)}>
+            <SelectTrigger className="w-[150px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="engagement">Engagement</SelectItem>
+              <SelectItem value="status">Status</SelectItem>
+              <SelectItem value="priority">Priority</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
           <input
             type="checkbox"
@@ -189,7 +241,9 @@ export function TaskBoardPage() {
         <KanbanBoard<Task>
           columns={columns}
           onDragEnd={handleDragEnd}
-          renderCard={(task) => <TaskCard task={task} />}
+          renderCard={(task) => (
+            <TaskCard task={task} onClick={() => navigate(`/portal/tasks/${task.id}`)} />
+          )}
         />
       )}
 

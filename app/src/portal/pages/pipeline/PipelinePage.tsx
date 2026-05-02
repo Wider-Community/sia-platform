@@ -7,8 +7,10 @@ import { KanbanBoard, type KanbanColumn } from "@/portal/components/KanbanBoard"
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnimatedTabContent } from "../../components/AnimatedTabContent";
+import { Plus } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -298,7 +300,15 @@ export function PipelinePage() {
 
   return (
     <PageShell>
-      <PageHeader title="Pipeline" />
+      <PageHeader
+        title="Pipeline"
+        actions={
+          <Button onClick={() => navigate("/portal/engagements/create")} size="sm">
+            <Plus className="h-4 w-4 mr-1.5" />
+            New Engagement
+          </Button>
+        }
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
