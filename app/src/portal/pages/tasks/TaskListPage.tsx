@@ -64,6 +64,11 @@ export function TaskListPage() {
         cell: ({ getValue }) => getValue<string>() || "—",
       },
       {
+        accessorKey: "engagementName",
+        header: "Engagement",
+        cell: ({ getValue }) => getValue<string>() || "—",
+      },
+      {
         accessorKey: "dueDate",
         header: ({ column }) => (
           <Button variant="ghost" onClick={() => column.toggleSorting()}>

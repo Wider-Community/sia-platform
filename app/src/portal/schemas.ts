@@ -46,12 +46,14 @@ export const fileRecordSchema = z.object({
   r2ObjectKey: z.string().min(1),
   uploadedBy: z.string().min(1),
   organizationId: z.string().min(1),
+  engagementId: z.string().optional(),
 });
 
 export const noteSchema = z.object({
   content: z.string().min(1, "Note cannot be empty"),
   createdBy: z.string().min(1),
   organizationId: z.string().min(1),
+  engagementId: z.string().optional(),
 });
 
 export const activityEventSchema = z.object({
@@ -90,6 +92,8 @@ export const signingRequestSchema = z.object({
   message: z.string().optional(),
   createdBy: z.string().min(1),
   completedPdfUrl: z.string().optional(),
+  organizationId: z.string().optional(),
+  engagementId: z.string().optional(),
 });
 
 export const signatureFieldSchema = z.object({
@@ -148,6 +152,8 @@ export const taskSchema = z.object({
   description: z.string().optional(),
   organizationId: z.string().optional(),
   organizationName: z.string().optional(),
+  engagementId: z.string().optional(),
+  engagementName: z.string().optional(),
   dueDate: z.string().min(1, "Due date is required"),
   status: z.enum(["open", "done"]),
   priority: z.enum(["low", "medium", "high"]),

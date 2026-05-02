@@ -45,6 +45,12 @@ export const ENTITY_REGISTRY: Record<string, EntityDef> = {
         verb: "belongs_to",
         direction: "outgoing",
       },
+      {
+        targetResource: "engagements",
+        fkField: "engagementId",
+        verb: "belongs_to",
+        direction: "outgoing",
+      },
     ],
   },
   notes: {
@@ -55,6 +61,12 @@ export const ENTITY_REGISTRY: Record<string, EntityDef> = {
       {
         targetResource: "organizations",
         fkField: "organizationId",
+        verb: "belongs_to",
+        direction: "outgoing",
+      },
+      {
+        targetResource: "engagements",
+        fkField: "engagementId",
         verb: "belongs_to",
         direction: "outgoing",
       },
@@ -84,13 +96,32 @@ export const ENTITY_REGISTRY: Record<string, EntityDef> = {
         verb: "relates_to",
         direction: "outgoing",
       },
+      {
+        targetResource: "engagements",
+        fkField: "engagementId",
+        verb: "belongs_to",
+        direction: "outgoing",
+      },
     ],
   },
   "signing-requests": {
     nodeType: "REGULAR",
     titleField: "title",
     requiredFields: ["title", "status", "pdfUrl", "pdfFileName", "createdBy"],
-    relationships: [],
+    relationships: [
+      {
+        targetResource: "organizations",
+        fkField: "organizationId",
+        verb: "belongs_to",
+        direction: "outgoing",
+      },
+      {
+        targetResource: "engagements",
+        fkField: "engagementId",
+        verb: "belongs_to",
+        direction: "outgoing",
+      },
+    ],
   },
   "signature-fields": {
     nodeType: "REGULAR",

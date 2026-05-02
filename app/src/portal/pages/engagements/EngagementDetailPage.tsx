@@ -9,7 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "../../components/EmptyState";
+import { TableSkeleton } from "../../components/TableSkeleton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +29,7 @@ import {
   Activity,
   StickyNote,
   CheckSquare,
+  Plus,
   Building2,
   CalendarDays,
   DollarSign,
@@ -93,6 +96,13 @@ export function EngagementDetailPage() {
     queryOptions: { enabled: !!eng?.organizationId },
   });
   const orgName = (orgQuery.data?.data?.name as string) ?? "";
+
+  const tasks = useList({
+    resource: "tasks",
+    filters: [{ field: "engagementId", operator: "eq", value: id }],
+    sorters: [{ field: "dueDate", order: "asc" }],
+    pagination: { mode: "off" },
+  });
 
   const events = useList({
     resource: "activity-events",
@@ -276,11 +286,43 @@ export function EngagementDetailPage() {
         <AnimatedTabContent activeValue={activeTab} value="tasks">
           <Card>
             <CardContent className="pt-6">
-              <EmptyState
-                icon={CheckSquare}
-                title="No tasks linked"
-                description="Tasks will appear here when linked to this engagement."
-              />
+              <div className="flex justify-end mb-4">
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`/portal/tasks/create?engagementId=${id}&engagementName=${encodeURIComponent(eng?.title as string ?? "")}&organizationId=${eng?.organizationId as string ?? ""}&organizationName=${encodeURIComponent(orgName)}`}>
+                    <Plus className="mr-2 h-4 w-4" /> New Task
+                  </Link>
+                </Button>
+              </div>
+              {tasks.query.isLoading ? (
+                <TableSkeleton rows={3} columns={4} />
+              ) : (tasks.result?.data?.length ?? 0) > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Due Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tasks.result!.data.map((t: BaseRecord) => (
+                      <TableRow key={t.id as string}>
+                        <TableCell className="font-medium">{t.title as string}</TableCell>
+                        <TableCell><Badge variant={(t.status as string) === "done" ? "secondary" : "default"}>{t.status as string}</Badge></TableCell>
+                        <TableCell><Badge variant={(t.priority as string) === "high" ? "destructive" : "outline"}>{t.priority as string}</Badge></TableCell>
+                        <TableCell>{t.dueDate ? new Date(t.dueDate as string).toLocaleDateString() : "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <EmptyState
+                  icon={CheckSquare}
+                  title="No tasks linked"
+                  description="Create a task linked to this engagement."
+                />
+              )}
             </CardContent>
           </Card>
         </AnimatedTabContent>
