@@ -1,4 +1,4 @@
-import { useOne, useUpdate, useCreate, useDelete } from "@refinedev/core";
+import { useOne, useUpdate, useCreate, useDelete, useCustomMutation } from "@refinedev/core";
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -89,6 +89,7 @@ export function MatchDetailPage() {
 
   const { mutate: updateMatch } = useUpdate();
   const { mutate: createEngagement } = useCreate();
+  const { mutate: createOrgConnection } = useCustomMutation();
   const { mutate: deleteMatch } = useDelete();
 
   const [declineOpen, setDeclineOpen] = useState(false);
@@ -125,6 +126,24 @@ export function MatchDetailPage() {
               },
               {
                 onSuccess: () => {
+                  // Create direct org↔org graph edge for connection traversal
+                  const orgAId = match?.organizationAId as string;
+                  const orgBId = match?.organizationBId as string;
+                  if (orgAId && orgBId) {
+                    createOrgConnection({
+                      url: `/api/nodes/${orgAId}/attributes`,
+                      method: "post",
+                      values: {
+                        sourceNodeId: orgAId,
+                        targetNodeId: orgBId,
+                        attributeName: "connected_via_match",
+                        attributeType: "CUSTOM",
+                        attributeTypeMode: "SCHEMALESS",
+                        attributeValue: { matchId: id, category: match?.category, score: match?.matchScore },
+                      },
+                      successNotification: false,
+                    });
+                  }
                   toast.success("Both parties accepted! Engagement created.");
                 },
               },
