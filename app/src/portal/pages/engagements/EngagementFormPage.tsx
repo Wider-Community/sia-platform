@@ -96,6 +96,17 @@ export function EngagementFormPage() {
     setValue("organizationId", orgId);
   };
 
+  const handleFinish = (values: FormValues) => {
+    const tagsRaw = values.tags;
+    const parsedTags =
+      typeof tagsRaw === "string"
+        ? (tagsRaw as string).split(",").map((t) => t.trim()).filter(Boolean)
+        : Array.isArray(tagsRaw)
+          ? tagsRaw
+          : [];
+    onFinish({ ...values, tags: parsedTags });
+  };
+
   return (
     <PageShell loading={formLoading}>
       <div className="mx-auto max-w-2xl space-y-6">
@@ -104,7 +115,7 @@ export function EngagementFormPage() {
           backTo="/portal/engagements"
         />
 
-        <form onSubmit={handleSubmit(onFinish)} className="space-y-6">
+        <form onSubmit={handleSubmit(handleFinish)} className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Engagement Details</CardTitle>

@@ -86,7 +86,7 @@ export function SlaSettingsPage() {
 
   return (
     <PageShell>
-      <PageHeader title="SLA Settings" />
+      <PageHeader title="SLA Settings" backTo="/portal" />
 
       <Card>
         <CardHeader>
