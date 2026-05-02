@@ -166,7 +166,24 @@ Audit every table in the portal. Wherever `organizationId` or `organizationAId`/
 
 ---
 
-## 8. Summary
+## 8. Search Bar Relocation
+
+### REQ-SEARCH-1: Move Search to Top Nav Bar
+The search trigger (Cmd+K) is currently inside the sidebar or only accessible via keyboard shortcut. Move it to the top nav bar (PortalHeader), positioned to the LEFT of the Lucid "+" button.
+
+**Required:**
+- Search input/button visible in the header at all times
+- Clicking it opens the CommandPalette (existing Cmd+K dialog)
+- Shows placeholder text: "Search organizations, engagements, tasks..." with Cmd+K shortcut hint
+- Visually: a search icon + text input styled bar (not just an icon)
+- On mobile: collapses to a search icon that opens the palette on tap
+
+### REQ-SEARCH-2: Search Opens Command Palette
+When the user clicks the search bar, it should open the existing CommandPalette component (the same one triggered by Cmd+K). No new search UI needed — just a visible trigger in the header.
+
+---
+
+## 9. Summary
 
 | # | Area | Items | Priority |
 |---|------|-------|----------|
@@ -177,18 +194,21 @@ Audit every table in the portal. Wherever `organizationId` or `organizationAId`/
 | 5 | Engagement communication | 2 requirements | MEDIUM |
 | 6 | Nav redesign (docs vs sigs) | 2 requirements | MEDIUM |
 | 7 | Bugs | 2 bugs | CRITICAL |
-| **Total** | | **20 items** | |
+| 8 | Search bar relocation | 2 requirements | HIGH |
+| **Total** | | **22 items** | |
 
 ---
 
 ## Sprint Plan
 
-### Sprint 1: Bugs + Lucid Fix (Day 1)
+### Sprint 1: Bugs + Lucid Fix + Search (Day 1)
 - [ ] BUG-1: Fix org ID → name in activity feed
 - [ ] BUG-2: Audit all tables for org name resolution
 - [ ] REQ-LUCID-1: Fix Lucid pop-up mechanism
 - [ ] REQ-LUCID-2: Make org selector required (no creation in vacuum)
 - [ ] REQ-LUCID-3: Note sub-types (org/engagement/task)
+- [ ] REQ-SEARCH-1: Move search bar to top nav header (left of Lucid)
+- [ ] REQ-SEARCH-2: Click search bar → opens CommandPalette
 
 ### Sprint 2: Items Entity + Lucid Item Type (Day 2)
 - [ ] REQ-ITEMS-1: Items schema, registry, resource
