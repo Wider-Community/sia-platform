@@ -45,12 +45,37 @@ export const ENTITY_REGISTRY: Record<string, EntityDef> = {
         verb: "belongs_to",
         direction: "outgoing",
       },
+      {
+        targetResource: "engagements",
+        fkField: "engagementId",
+        verb: "belongs_to",
+        direction: "outgoing",
+      },
     ],
   },
   notes: {
     nodeType: "REGULAR",
     titleField: "content",
     requiredFields: ["content", "createdBy", "organizationId"],
+    relationships: [
+      {
+        targetResource: "organizations",
+        fkField: "organizationId",
+        verb: "belongs_to",
+        direction: "outgoing",
+      },
+      {
+        targetResource: "engagements",
+        fkField: "engagementId",
+        verb: "belongs_to",
+        direction: "outgoing",
+      },
+    ],
+  },
+  engagements: {
+    nodeType: "REGULAR",
+    titleField: "title",
+    requiredFields: ["title", "organizationId", "stage", "category", "createdBy"],
     relationships: [
       {
         targetResource: "organizations",
@@ -71,13 +96,32 @@ export const ENTITY_REGISTRY: Record<string, EntityDef> = {
         verb: "relates_to",
         direction: "outgoing",
       },
+      {
+        targetResource: "engagements",
+        fkField: "engagementId",
+        verb: "belongs_to",
+        direction: "outgoing",
+      },
     ],
   },
   "signing-requests": {
     nodeType: "REGULAR",
     titleField: "title",
     requiredFields: ["title", "status", "pdfUrl", "pdfFileName", "createdBy"],
-    relationships: [],
+    relationships: [
+      {
+        targetResource: "organizations",
+        fkField: "organizationId",
+        verb: "belongs_to",
+        direction: "outgoing",
+      },
+      {
+        targetResource: "engagements",
+        fkField: "engagementId",
+        verb: "belongs_to",
+        direction: "outgoing",
+      },
+    ],
   },
   "signature-fields": {
     nodeType: "REGULAR",
@@ -141,6 +185,25 @@ export const ENTITY_REGISTRY: Record<string, EntityDef> = {
     titleField: "title",
     requiredFields: ["type", "title", "message", "read"],
     relationships: [],
+  },
+  matches: {
+    nodeType: "REGULAR",
+    titleField: "matchReason",
+    requiredFields: ["organizationAId", "organizationBId", "status", "matchScore", "matchReason", "category", "suggestedBy"],
+    relationships: [
+      {
+        targetResource: "organizations",
+        fkField: "organizationAId",
+        verb: "matches_with",
+        direction: "outgoing",
+      },
+      {
+        targetResource: "organizations",
+        fkField: "organizationBId",
+        verb: "matches_with",
+        direction: "outgoing",
+      },
+    ],
   },
 };
 

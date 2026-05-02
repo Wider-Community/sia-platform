@@ -2,15 +2,16 @@ import type { DataProvider } from "@refinedev/core";
 import { MujarradClient } from "../lib/mujarrad-client";
 import { EntityControlLayer } from "../lib/entity-control-layer";
 
-const API_URL = "/mujarrad-api";
+const API_URL = import.meta.env.VITE_MUJARRAD_API_URL ?? import.meta.env.VITE_API_BASE_URL ?? "https://mujarrad.onrender.com";
 const SPACE = "sia-portal-platform";
-const API_KEY = import.meta.env.VITE_MUJARRAD_PUBLIC_KEY ?? "";
-const API_SECRET = import.meta.env.VITE_MUJARRAD_PRIVATE_KEY ?? "";
 
 const client = new MujarradClient({
   apiUrl: API_URL,
   spaceSlug: SPACE,
-  auth: { type: "apiKey", apiKey: API_KEY, secretKey: API_SECRET },
+  auth: {
+    type: "jwt",
+    getToken: async () => localStorage.getItem("sia_token"),
+  },
 });
 
 const entityLayer = new EntityControlLayer(client);
@@ -29,7 +30,7 @@ export const mujarradDataProvider: DataProvider = {
   },
 
   async getOne({ resource, id }) {
-    const record = await entityLayer.getEntity(resource, String(id));
+    const record = await entityLayer.getEntity(resource, id);
     return { data: record as any };
   },
 
@@ -44,14 +45,14 @@ export const mujarradDataProvider: DataProvider = {
   async update({ resource, id, variables }) {
     const record = await entityLayer.updateEntity(
       resource,
-      String(id),
+      id,
       variables as Record<string, unknown>,
     );
     return { data: record as any };
   },
 
   async deleteOne({ resource, id }) {
-    await entityLayer.deleteEntity(resource, String(id));
+    await entityLayer.deleteEntity(resource, id);
     return { data: { id } as any };
   },
 
@@ -61,12 +62,12 @@ export const mujarradDataProvider: DataProvider = {
     const qs = q
       ? `?${new URLSearchParams(q as Record<string, string>).toString()}`
       : "";
+    const token = localStorage.getItem("sia_token") ?? "";
     const res = await fetch(`${API_URL}${url}${qs}`, {
       method: method.toUpperCase(),
       headers: {
         "Content-Type": "application/json",
-        "X-API-Key": API_KEY,
-        "X-API-Secret": API_SECRET,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(customHeaders as Record<string, string>),
       },
       body: payload ? JSON.stringify(payload) : undefined,

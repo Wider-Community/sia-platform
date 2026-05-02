@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useList, useUpdate } from "@refinedev/core";
 import { useState, useCallback } from "react";
+import { toast } from "sonner";
 import { Refine } from "@refinedev/core";
 import routerProvider from "@refinedev/react-router";
 import {
@@ -11,10 +12,10 @@ import {
 import { mujarradDataProvider } from "../../providers/mujarrad-data-provider";
 import { Button } from "@/components/ui/button";
 import { AnimatedButton } from "../../components/AnimatedButton";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, Clock, FileSignature, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, FileSignature, Loader2, XCircle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,17 +48,17 @@ function PublicSigningPageInner() {
   const [declineReason, setDeclineReason] = useState("");
 
   // Find signer by token
-  const signersQuery = useList({
+  const { result: signersResult, query: signersQueryState } = useList({
     resource: "signers",
     filters: [{ field: "token", operator: "eq", value: token }],
     pagination: { mode: "off" },
   });
 
-  const signer = (signersQuery.result?.data ?? [])[0] as BaseRecord | undefined;
+  const signer = (signersResult?.data ?? [])[0] as BaseRecord | undefined;
   const signingRequestId = signer?.signingRequestId as string | undefined;
 
   // Get the signing request
-  const requestQuery = useList({
+  const { result: requestResult, query: requestQueryState } = useList({
     resource: "signing-requests",
     filters: signingRequestId
       ? [{ field: "id", operator: "eq", value: signingRequestId }]
@@ -65,10 +66,10 @@ function PublicSigningPageInner() {
     pagination: { mode: "off" },
     queryOptions: { enabled: !!signingRequestId },
   });
-  const request = (requestQuery.result?.data ?? [])[0] as BaseRecord | undefined;
+  const request = (requestResult?.data ?? [])[0] as BaseRecord | undefined;
 
   // Get fields for this signer
-  const fieldsQuery = useList({
+  const { result: fieldsResult, query: fieldsQueryState } = useList({
     resource: "signature-fields",
     filters: signer
       ? [
@@ -81,7 +82,7 @@ function PublicSigningPageInner() {
   });
 
   // Get all fields for the request (to show other signers' fields as non-interactive)
-  const allFieldsQuery = useList({
+  const { result: allFieldsResult } = useList({
     resource: "signature-fields",
     filters: signingRequestId
       ? [{ field: "signingRequestId", operator: "eq", value: signingRequestId }]
@@ -91,7 +92,7 @@ function PublicSigningPageInner() {
   });
 
   // Get all signers for this request
-  const allSignersQuery = useList({
+  const { result: allSignersResult } = useList({
     resource: "signers",
     filters: signingRequestId
       ? [{ field: "signingRequestId", operator: "eq", value: signingRequestId }]
@@ -104,9 +105,9 @@ function PublicSigningPageInner() {
   const { mutateAsync: updateSigner } = useUpdate();
   const { mutateAsync: updateRequest } = useUpdate();
 
-  const myFields = (fieldsQuery.result?.data ?? []) as BaseRecord[];
-  const allFields = (allFieldsQuery.result?.data ?? []) as BaseRecord[];
-  const allSigners = (allSignersQuery.result?.data ?? []) as BaseRecord[];
+  const myFields = (fieldsResult?.data ?? []) as BaseRecord[];
+  const allFields = (allFieldsResult?.data ?? []) as BaseRecord[];
+  const allSigners = (allSignersResult?.data ?? []) as BaseRecord[];
 
   const myFieldIds = new Set(myFields.map((f) => f.id as string));
 
@@ -166,6 +167,7 @@ function PublicSigningPageInner() {
           resource: "signature-fields",
           id: fieldId,
           values: { signedImageUrl: imageUrl },
+          successNotification: false,
         });
       }
 
@@ -174,6 +176,7 @@ function PublicSigningPageInner() {
         resource: "signers",
         id: signer.id as string,
         values: { status: "signed", signedAt: new Date().toISOString() },
+        successNotification: false,
       });
 
       // Check if all signers have signed
@@ -189,18 +192,20 @@ function PublicSigningPageInner() {
           resource: "signing-requests",
           id: signingRequestId,
           values: { status: "completed" },
+          successNotification: false,
         });
       } else if (signingRequestId) {
         await updateRequest({
           resource: "signing-requests",
           id: signingRequestId,
           values: { status: "partially_signed" },
+          successNotification: false,
         });
       }
 
       setCompleted(true);
     } catch (err) {
-      console.error("Failed to submit signatures:", err);
+      toast.error("Failed to submit signatures");
     } finally {
       setSubmitting(false);
     }
@@ -224,7 +229,7 @@ function PublicSigningPageInner() {
   const isExpired = signer?.expiresAt && new Date(signer.expiresAt as string) < new Date();
 
   const isLoading =
-    signersQuery.query.isLoading || requestQuery.query.isLoading || fieldsQuery.query.isLoading;
+    signersQueryState.isLoading || requestQueryState.isLoading || fieldsQueryState.isLoading;
 
   if (isLoading) {
     return (

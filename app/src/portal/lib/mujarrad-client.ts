@@ -1,4 +1,4 @@
-const DEFAULT_API_URL = "/mujarrad-api";
+const DEFAULT_API_URL = import.meta.env.VITE_MUJARRAD_API_URL ?? import.meta.env.VITE_API_BASE_URL ?? "https://mujarrad.onrender.com";
 const DEFAULT_SPACE = "sia-portal-platform";
 
 export type NodeType = "REGULAR" | "CONTEXT" | "ASSUMPTION" | "TEMPLATE";
@@ -38,10 +38,16 @@ export interface MujarradClientConfig {
     | { type: "jwt"; getToken: () => Promise<string | null> };
 }
 
+// In-flight request dedup + short TTL cache for GET requests
+const CACHE_TTL = 5_000; // 5 seconds
+interface CacheEntry { data: unknown; expiresAt: number }
+
 export class MujarradClient {
   private apiUrl: string;
   private spaceSlug: string;
   private auth: MujarradClientConfig["auth"];
+  private inflight = new Map<string, Promise<unknown>>();
+  private cache = new Map<string, CacheEntry>();
 
   constructor(config: MujarradClientConfig) {
     this.apiUrl = config.apiUrl ?? DEFAULT_API_URL;
@@ -49,7 +55,49 @@ export class MujarradClient {
     this.auth = config.auth;
   }
 
+  /** Invalidate cache entries matching a path prefix */
+  invalidate(pathPrefix?: string) {
+    if (!pathPrefix) { this.cache.clear(); return; }
+    for (const key of this.cache.keys()) {
+      if (key.startsWith(pathPrefix)) this.cache.delete(key);
+    }
+  }
+
   private async request<T>(path: string, options?: RequestInit): Promise<T> {
+    const method = (options?.method ?? "GET").toUpperCase();
+    const isRead = method === "GET";
+
+    // For GET: check cache first, then dedup in-flight requests
+    if (isRead) {
+      const cached = this.cache.get(path);
+      if (cached && cached.expiresAt > Date.now()) return cached.data as T;
+
+      const existing = this.inflight.get(path);
+      if (existing) return existing as Promise<T>;
+    }
+
+    const promise = this._fetch<T>(path, options);
+
+    if (isRead) {
+      this.inflight.set(path, promise);
+      promise.then(
+        (data) => {
+          this.cache.set(path, { data, expiresAt: Date.now() + CACHE_TTL });
+          this.inflight.delete(path);
+        },
+        () => { this.inflight.delete(path); },
+      );
+    } else {
+      // Mutations invalidate relevant cache entries
+      promise.then(() => {
+        this.invalidate(this.spacePath("/nodes"));
+      });
+    }
+
+    return promise;
+  }
+
+  private async _fetch<T>(path: string, options?: RequestInit): Promise<T> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
@@ -63,47 +111,28 @@ export class MujarradClient {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    let lastError: Error | null = null;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      if (attempt > 0) {
-        await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
+    {
+      const res = await fetch(`${this.apiUrl}${path}`, {
+        ...options,
+        headers: { ...headers, ...options?.headers },
+      });
+
+      if (res.status === 204) return null as T;
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new MujarradError(
+          (body as Record<string, string>).message ?? `HTTP ${res.status}`,
+          res.status,
+        );
       }
-      try {
-        const res = await fetch(`${this.apiUrl}${path}`, {
-          ...options,
-          headers: { ...headers, ...options?.headers },
-        });
 
-        if (res.status === 204) return null as T;
-
-        if (res.status === 429 || res.status >= 500) {
-          lastError = new MujarradError(
-            `HTTP ${res.status}`,
-            res.status,
-          );
-          continue;
-        }
-
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new MujarradError(
-            (body as Record<string, string>).message ?? `HTTP ${res.status}`,
-            res.status,
-          );
-        }
-
-        return await res.json();
-      } catch (err) {
-        if (err instanceof MujarradError) throw err;
-        lastError = err as Error;
-        continue;
-      }
+      return await res.json();
     }
-    throw lastError ?? new MujarradError("Request failed after retries", 0);
   }
 
   private spacePath(suffix: string): string {
-    return `/spaces/${this.spaceSlug}${suffix}`;
+    return `/api/spaces/${this.spaceSlug}${suffix}`;
   }
 
   async createNode<T = Record<string, unknown>>(
@@ -151,16 +180,18 @@ export class MujarradClient {
       nodeDetails?: T;
       content?: string;
     },
+    /** Pass existing node to skip redundant GET */
+    existing?: MujarradNode<T>,
   ): Promise<MujarradNode<T>> {
-    const existing = await this.getNode<T>(nodeId);
+    const base = existing ?? await this.getNode<T>(nodeId);
     return this.request<MujarradNode<T>>(this.spacePath(`/nodes/${nodeId}`), {
       method: "PUT",
       body: JSON.stringify({
-        title: updates.title ?? existing.title,
-        slug: existing.slug,
-        nodeType: updates.nodeType ?? existing.nodeType,
-        content: updates.content ?? existing.content ?? "",
-        nodeDetails: updates.nodeDetails ?? existing.nodeDetails,
+        title: updates.title ?? base.title,
+        slug: base.slug,
+        nodeType: updates.nodeType ?? base.nodeType,
+        content: updates.content ?? base.content ?? "",
+        nodeDetails: updates.nodeDetails ?? base.nodeDetails,
       }),
     });
   }
@@ -193,7 +224,7 @@ export class MujarradClient {
     attributeName: string,
     metadata?: Record<string, unknown>,
   ): Promise<MujarradAttribute> {
-    return this.request<MujarradAttribute>(`/nodes/${sourceNodeId}/attributes`, {
+    return this.request<MujarradAttribute>(`/api/nodes/${sourceNodeId}/attributes`, {
       method: "POST",
       body: JSON.stringify({
         sourceNodeId,
@@ -206,32 +237,33 @@ export class MujarradClient {
   }
 
   async getAttributes(nodeId: string): Promise<MujarradAttribute[]> {
-    return this.request<MujarradAttribute[]>(`/nodes/${nodeId}/attributes`);
+    return this.request<MujarradAttribute[]>(`/api/nodes/${nodeId}/attributes`);
   }
 
   async updateAttribute(
     attributeId: string,
     updates: { attributeName?: string; attributeValue?: Record<string, unknown> },
   ): Promise<MujarradAttribute> {
-    return this.request<MujarradAttribute>(`/attributes/${attributeId}`, {
+    return this.request<MujarradAttribute>(`/api/attributes/${attributeId}`, {
       method: "PUT",
       body: JSON.stringify(updates),
     });
   }
 
   async deleteAttribute(attributeId: string): Promise<void> {
-    await this.request<void>(`/attributes/${attributeId}`, {
+    await this.request<void>(`/api/attributes/${attributeId}`, {
       method: "DELETE",
     });
   }
 }
 
 export class MujarradError extends Error {
-  status: number;
-  constructor(message: string, status: number) {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
     super(message);
     this.name = "MujarradError";
-    this.status = status;
   }
 }
 

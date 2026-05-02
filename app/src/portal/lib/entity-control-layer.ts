@@ -20,8 +20,7 @@ const SKIP_ACTIVITY_LOGGING = new Set([
 ]);
 
 export class EntityControlLayer {
-  private client: MujarradClient;
-  constructor(client: MujarradClient) { this.client = client; }
+  constructor(private client: MujarradClient) {}
 
   async createEntity(
     resource: string,
@@ -91,7 +90,7 @@ export class EntityControlLayer {
     const node = await this.client.updateNode(id, {
       title,
       nodeDetails: merged,
-    });
+    }, existing);
 
     const record = this.normalize(node);
     this.logActivity("updated", resource, record);
@@ -159,7 +158,9 @@ export class EntityControlLayer {
       if (typeof targetId === "string" && targetId) {
         this.client
           .createAttribute(sourceId, targetId, rel.verb)
-          .catch(() => {});
+          .catch((err) => {
+            console.warn(`[ECL] Attribute ${rel.verb} from ${sourceId} to ${targetId} failed:`, err);
+          });
       }
     }
   }
@@ -184,14 +185,20 @@ export class EntityControlLayer {
               a.attributeName === rel.verb &&
               a.targetNodeId === String(oldTarget),
           );
-          if (old) this.client.deleteAttribute(old.id).catch(() => {});
+          if (old) this.client.deleteAttribute(old.id).catch((err) => {
+            console.warn(`[ECL] Delete old attribute ${old.id} failed:`, err);
+          });
         })
-        .catch(() => {});
+        .catch((err) => {
+          console.warn(`[ECL] Get attributes for ${nodeId} failed:`, err);
+        });
 
       if (typeof newTarget === "string" && newTarget) {
         this.client
           .createAttribute(nodeId, newTarget, rel.verb)
-          .catch(() => {});
+          .catch((err) => {
+            console.warn(`[ECL] Create attribute ${rel.verb} from ${nodeId} to ${newTarget} failed:`, err);
+          });
       }
     }
   }
@@ -201,10 +208,14 @@ export class EntityControlLayer {
       .getAttributes(nodeId)
       .then((attrs) =>
         Promise.all(
-          attrs.map((a) => this.client.deleteAttribute(a.id).catch(() => {})),
+          attrs.map((a) => this.client.deleteAttribute(a.id).catch((err) => {
+            console.warn(`[ECL] Cleanup attribute ${a.id} failed:`, err);
+          })),
         ),
       )
-      .catch(() => {});
+      .catch((err) => {
+        console.warn(`[ECL] Get attributes for cleanup ${nodeId} failed:`, err);
+      });
   }
 
   private logActivity(
@@ -305,7 +316,7 @@ export class EntityControlLayer {
     pagination?: Pagination,
   ): EntityRecord[] {
     if (!pagination || pagination.mode === "off") return data;
-    const page = (pagination as Record<string, unknown>).current as number ?? 1;
+    const page = pagination.current ?? 1;
     const size = pagination.pageSize ?? 10;
     return data.slice((page - 1) * size, page * size);
   }

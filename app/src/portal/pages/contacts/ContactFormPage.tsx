@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useCreate, useUpdate, useOne, useList } from "@refinedev/core";
 import { z } from "zod";
 import { useEffect } from "react";
@@ -35,12 +35,15 @@ type FormValues = z.infer<typeof formSchema>;
 export function ContactFormPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const prefilledOrgId = searchParams.get("organizationId") ?? "";
   const isEdit = Boolean(id);
 
-  const orgsData = useList({
+  const { result: orgsResult } = useList({
     resource: "organizations",
     pagination: { mode: "off" },
   });
+  const orgsData = orgsResult;
 
   const { query: contactQuery } = useOne({
     resource: "contacts",
@@ -48,12 +51,8 @@ export function ContactFormPage() {
     queryOptions: { enabled: isEdit },
   });
 
-  const createMutation = useCreate();
-  const createContact = createMutation.mutate;
-  const isCreating = (createMutation as unknown as { isPending?: boolean }).isPending ?? false;
-  const updateMutation = useUpdate();
-  const updateContact = updateMutation.mutate;
-  const isUpdating = (updateMutation as unknown as { isPending?: boolean }).isPending ?? false;
+  const { mutate: createContact, isLoading: isCreating } = useCreate();
+  const { mutate: updateContact, isLoading: isUpdating } = useUpdate();
 
   const {
     register,
@@ -70,7 +69,7 @@ export function ContactFormPage() {
       email: "",
       phone: "",
       role: "",
-      organizationId: "",
+      organizationId: prefilledOrgId,
     },
   });
 
@@ -106,10 +105,19 @@ export function ContactFormPage() {
   };
 
   if (isEdit && contactQuery?.isLoading) {
+    return <PageShell loading={true}>{null}</PageShell>;
+  }
+
+  if (isEdit && !contactQuery?.isLoading && !contactQuery?.data?.data) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <PageShell>
+        <div className="flex h-64 flex-col items-center justify-center gap-4">
+          <p className="text-muted-foreground">Contact not found</p>
+          <Button variant="outline" onClick={() => navigate("/portal/contacts")}>
+            Back to Contacts
+          </Button>
+        </div>
+      </PageShell>
     );
   }
 
@@ -171,7 +179,7 @@ export function ContactFormPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {(orgsData.result?.data ?? []).map((org) => (
+                    {(orgsData?.data ?? []).map((org) => (
                       <SelectItem key={org.id as string} value={org.id as string}>
                         {org.name as string}
                       </SelectItem>

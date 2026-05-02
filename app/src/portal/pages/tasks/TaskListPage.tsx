@@ -28,13 +28,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, ArrowUpDown, ChevronLeft, ChevronRight, CheckSquare } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Plus, ArrowUpDown, ChevronLeft, ChevronRight, CheckSquare, LayoutGrid, Trash2 } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageShell } from "../../components/PageShell";
 import { PageHeader } from "../../components/PageHeader";
 import { EmptyState } from "../../components/EmptyState";
-import { useUpdate } from "@refinedev/core";
+import { useUpdate, useDelete } from "@refinedev/core";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { Task } from "../../schemas";
 
 const priorityColor: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
@@ -47,6 +58,7 @@ export function TaskListPage() {
   const navigate = useNavigate();
   const [globalFilter, setGlobalFilter] = useState("");
   const { mutate: updateTask } = useUpdate();
+  const { mutate: deleteTask } = useDelete();
 
   const columns = useMemo<ColumnDef<Task>[]>(
     () => [
@@ -61,7 +73,38 @@ export function TaskListPage() {
       {
         accessorKey: "organizationName",
         header: "Organization",
-        cell: ({ getValue }) => getValue<string>() || "—",
+        cell: ({ row }) => {
+          const orgId = row.original.organizationId;
+          const orgName = row.original.organizationName;
+          if (!orgId) return "—";
+          return (
+            <Link
+              to={`/portal/organizations/${orgId}`}
+              className="text-primary underline-offset-4 hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {orgName || "Unknown"}
+            </Link>
+          );
+        },
+      },
+      {
+        accessorKey: "engagementName",
+        header: "Engagement",
+        cell: ({ row }) => {
+          const engId = row.original.engagementId;
+          const engName = row.original.engagementName;
+          if (!engId) return "—";
+          return (
+            <Link
+              to={`/portal/engagements/${engId}`}
+              className="text-primary underline-offset-4 hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {engName || "Unknown"}
+            </Link>
+          );
+        },
       },
       {
         accessorKey: "dueDate",
@@ -94,27 +137,58 @@ export function TaskListPage() {
         header: "",
         cell: ({ row }) => {
           const task = row.original;
-          if (task.status === "done") return null;
+          const isDone = task.status === "done";
           return (
-            <AnimatedButton
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                updateTask({
-                  resource: "tasks",
-                  id: task.id,
-                  values: { status: "done" },
-                });
-              }}
-            >
-              Mark Done
-            </AnimatedButton>
+            <div className="flex items-center gap-1">
+              <AnimatedButton
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateTask({
+                    resource: "tasks",
+                    id: task.id,
+                    values: { status: isDone ? "open" : "done" },
+                  });
+                }}
+              >
+                {isDone ? "Reopen" : "Mark Done"}
+              </AnimatedButton>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete task?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete &ldquo;{task.title}&rdquo;. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() =>
+                        deleteTask({ resource: "tasks", id: task.id })
+                      }
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           );
         },
       },
     ],
-    [updateTask],
+    [updateTask, deleteTask],
   );
 
   const { reactTable, refineCore } = useTable<Task>({
@@ -140,10 +214,16 @@ export function TaskListPage() {
       <PageHeader
         title="Tasks"
         actions={
-          <AnimatedButton onClick={() => navigate("/portal/tasks/create")}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Task
-          </AnimatedButton>
+          <>
+            <AnimatedButton variant="outline" onClick={() => navigate("/portal/tasks/board")}>
+              <LayoutGrid className="mr-2 h-4 w-4" />
+              Board View
+            </AnimatedButton>
+            <AnimatedButton onClick={() => navigate("/portal/tasks/create")}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Task
+            </AnimatedButton>
+          </>
         }
       />
 
@@ -205,7 +285,8 @@ export function TaskListPage() {
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: index * 0.03 }}
-                    className="border-b transition-colors hover:bg-muted/50"
+                    className="border-b transition-colors hover:bg-muted/50 cursor-pointer"
+                    onClick={() => navigate(`/portal/tasks/${row.original.id}`)}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>

@@ -19,7 +19,9 @@ import {
   Map as MapIcon,
   Settings,
   LayoutDashboard,
+  Layers,
 } from "lucide-react";
+import type { BaseRecord } from "@refinedev/core";
 
 interface SearchResult {
   id: string;
@@ -42,6 +44,8 @@ const pages: SearchResult[] = [
   { id: "nav-new-contact", type: "page", title: "New Contact", href: "/portal/contacts/create" },
   { id: "nav-new-task", type: "page", title: "New Task", href: "/portal/tasks/create" },
   { id: "nav-new-signing", type: "page", title: "New Signing Request", href: "/portal/signing/new" },
+  { id: "nav-engagements", type: "page", title: "Engagements", href: "/portal/engagements" },
+  { id: "nav-new-engagement", type: "page", title: "New Engagement", href: "/portal/engagements/create" },
 ];
 
 const pageIcons: Record<string, typeof Building2> = {
@@ -53,6 +57,7 @@ const pageIcons: Record<string, typeof Building2> = {
   "Documents & Signing": FileSignature,
   Tasks: CheckSquare,
   Settings: Settings,
+  Engagements: Layers,
 };
 
 export function CommandPalette() {
@@ -63,6 +68,8 @@ export function CommandPalette() {
   const orgs = useList({ resource: "organizations", pagination: { mode: "off" } });
   const contacts = useList({ resource: "contacts", pagination: { mode: "off" } });
   const tasks = useList({ resource: "tasks", pagination: { mode: "off" } });
+  const engagements = useList({ resource: "engagements", pagination: { mode: "off" } });
+  const signingRequests = useList({ resource: "signing-requests", pagination: { mode: "off" } });
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -104,17 +111,37 @@ export function CommandPalette() {
         href: "/portal/tasks",
       });
     }
+    for (const e of engagements.result?.data ?? []) {
+      results.push({
+        id: e.id as string,
+        type: "engagement",
+        title: e.title as string,
+        subtitle: `${(e.stage as string) ?? ""} · ${(e.category as string) ?? ""}`,
+        href: `/portal/engagements/${e.id}`,
+      });
+    }
+    for (const s of signingRequests.result?.data ?? []) {
+      results.push({
+        id: s.id as string,
+        type: "signing",
+        title: s.title as string,
+        subtitle: (s.status as string) ?? "",
+        href: `/portal/signing/${s.id}`,
+      });
+    }
     return results;
-  }, [orgs.result?.data, contacts.result?.data, tasks.result?.data]);
+  }, [orgs.result?.data, contacts.result?.data, tasks.result?.data, engagements.result?.data, signingRequests.result?.data]);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
-    if (!q) return { pages: pages.slice(0, 6), organizations: [], contacts: [], tasks: [] };
+    if (!q) return { pages: pages.slice(0, 6), organizations: [], contacts: [], tasks: [], engagements: [], signing: [] };
     const matchPages = pages.filter((p) => p.title.toLowerCase().includes(q));
     const matchOrgs = allResults.filter((r) => r.type === "organization" && r.title.toLowerCase().includes(q)).slice(0, 5);
     const matchContacts = allResults.filter((r) => r.type === "contact" && r.title.toLowerCase().includes(q)).slice(0, 5);
     const matchTasks = allResults.filter((r) => r.type === "task" && r.title.toLowerCase().includes(q)).slice(0, 5);
-    return { pages: matchPages, organizations: matchOrgs, contacts: matchContacts, tasks: matchTasks };
+    const matchEngagements = allResults.filter((r) => r.type === "engagement" && r.title.toLowerCase().includes(q)).slice(0, 5);
+    const matchSigning = allResults.filter((r) => r.type === "signing" && r.title.toLowerCase().includes(q)).slice(0, 5);
+    return { pages: matchPages, organizations: matchOrgs, contacts: matchContacts, tasks: matchTasks, engagements: matchEngagements, signing: matchSigning };
   }, [query, allResults]);
 
   const handleSelect = useCallback(
@@ -126,12 +153,12 @@ export function CommandPalette() {
     [navigate],
   );
 
-  const totalResults = filtered.pages.length + filtered.organizations.length + filtered.contacts.length + filtered.tasks.length;
+  const totalResults = filtered.pages.length + filtered.organizations.length + filtered.contacts.length + filtered.tasks.length + filtered.engagements.length + filtered.signing.length;
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput
-        placeholder="Search organizations, contacts, tasks, pages..."
+        placeholder="Search organizations, contacts, tasks, engagements, signing..."
         value={query}
         onValueChange={setQuery}
       />
@@ -200,6 +227,34 @@ export function CommandPalette() {
             {filtered.tasks.map((r) => (
               <CommandItem key={r.id} onSelect={() => handleSelect(r)}>
                 <CheckSquare className="mr-2 h-4 w-4" />
+                <div className="flex flex-col">
+                  <span>{r.title}</span>
+                  {r.subtitle && <span className="text-xs text-muted-foreground">{r.subtitle}</span>}
+                </div>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+
+        {filtered.engagements.length > 0 && (
+          <CommandGroup heading="Engagements">
+            {filtered.engagements.map((r) => (
+              <CommandItem key={r.id} onSelect={() => handleSelect(r)}>
+                <Layers className="mr-2 h-4 w-4" />
+                <div className="flex flex-col">
+                  <span>{r.title}</span>
+                  {r.subtitle && <span className="text-xs text-muted-foreground">{r.subtitle}</span>}
+                </div>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+
+        {filtered.signing.length > 0 && (
+          <CommandGroup heading="Signing Requests">
+            {filtered.signing.map((r) => (
+              <CommandItem key={r.id} onSelect={() => handleSelect(r)}>
+                <FileSignature className="mr-2 h-4 w-4" />
                 <div className="flex flex-col">
                   <span>{r.title}</span>
                   {r.subtitle && <span className="text-xs text-muted-foreground">{r.subtitle}</span>}

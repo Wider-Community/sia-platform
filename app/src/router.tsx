@@ -21,10 +21,19 @@ import { NewSigningRequestPage } from "@/portal/pages/signing/NewSigningRequestP
 import { SigningDetailPage } from "@/portal/pages/signing/SigningDetailPage";
 import { PublicSigningPage } from "@/portal/pages/signing/PublicSigningPage";
 import { TaskListPage } from "@/portal/pages/tasks/TaskListPage";
+import { TaskBoardPage } from "@/portal/pages/tasks/TaskBoardPage";
 import { TaskCreatePage } from "@/portal/pages/tasks/TaskCreatePage";
+import { TaskDetailPage } from "@/portal/pages/tasks/TaskDetailPage";
+import { TaskEditPage } from "@/portal/pages/tasks/TaskEditPage";
 import { SlaSettingsPage } from "@/portal/pages/settings/SlaSettingsPage";
 import { PipelinePage } from "@/portal/pages/pipeline/PipelinePage";
 import { MapPage } from "@/portal/pages/map/MapPage";
+import { EngagementListPage } from "@/portal/pages/engagements/EngagementListPage";
+import { EngagementFormPage } from "@/portal/pages/engagements/EngagementFormPage";
+import { EngagementDetailPage } from "@/portal/pages/engagements/EngagementDetailPage";
+import { MatchListPage } from "@/portal/pages/matches/MatchListPage";
+import { MatchCreatePage } from "@/portal/pages/matches/MatchCreatePage";
+import { MatchDetailPage } from "@/portal/pages/matches/MatchDetailPage";
 
 const ChartsPage = lazy(() => import("@/pages/investor/ChartsPage").then(m => ({ default: m.ChartsPage })));
 const SalesForecastPage = lazy(() => import("@/pages/investor/SalesForecastPage").then(m => ({ default: m.SalesForecastPage })));
@@ -98,13 +107,23 @@ export const router = createBrowserRouter([
           { path: "/portal/contacts/create", element: <ContactFormPage /> },
           { path: "/portal/contacts/edit/:id", element: <ContactFormPage /> },
           { path: "/portal/contacts/:id", element: <ContactDetailPage /> },
+          { path: "/portal/engagements", element: <EngagementListPage /> },
+          { path: "/portal/engagements/create", element: <EngagementFormPage /> },
+          { path: "/portal/engagements/edit/:id", element: <EngagementFormPage /> },
+          { path: "/portal/engagements/:id", element: <EngagementDetailPage /> },
+          { path: "/portal/matches", element: <MatchListPage /> },
+          { path: "/portal/matches/create", element: <MatchCreatePage /> },
+          { path: "/portal/matches/:id", element: <MatchDetailPage /> },
           { path: "/portal/map", element: <MapPage /> },
           { path: "/portal/pipeline", element: <PipelinePage /> },
           { path: "/portal/signing", element: <SigningListPage /> },
           { path: "/portal/signing/new", element: <NewSigningRequestPage /> },
           { path: "/portal/signing/:id", element: <SigningDetailPage /> },
           { path: "/portal/tasks", element: <TaskListPage /> },
+          { path: "/portal/tasks/board", element: <TaskBoardPage /> },
           { path: "/portal/tasks/create", element: <TaskCreatePage /> },
+          { path: "/portal/tasks/edit/:id", element: <TaskEditPage /> },
+          { path: "/portal/tasks/:id", element: <TaskDetailPage /> },
           { path: "/portal/settings/sla", element: <SlaSettingsPage /> },
         ],
       },

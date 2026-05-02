@@ -1,14 +1,18 @@
+import { useState } from "react";
 import { useLogin } from "@refinedev/core";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useGoogleLogin } from "@react-oauth/google";
+import { Button } from "@/components/ui/button";
 import { AnimatedButton } from "../components/AnimatedButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle } from "lucide-react";
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email"),
+  email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -17,19 +21,68 @@ type LoginForm = z.infer<typeof loginSchema>;
 const hasGoogleOAuth = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
 export function PortalLoginPage() {
+  const [serverError, setServerError] = useState<string | null>(null);
   const { mutate: login, isPending: isLoading } = useLogin();
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
 
-  const handleGoogleLogin = async () => {
-    if (!hasGoogleOAuth) return;
-    await import("@react-oauth/google");
-    login({ provider: "google" });
-  };
+  const googleLogin = useGoogleLogin({
+    flow: "implicit",
+    onSuccess: async (tokenResponse) => {
+      setServerError(null);
+      try {
+        const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+        });
+        if (!userInfoRes.ok) throw new Error("Failed to fetch user info");
+        const userInfo = await userInfoRes.json();
+
+        login(
+          { provider: "google", credential: tokenResponse.access_token },
+          {
+            onSuccess: (result) => {
+              if (!result.success && result.error) {
+                // Fallback: store session directly if Mujarrad OAuth isn't available
+                const user = { id: userInfo.sub, name: userInfo.name, email: userInfo.email, avatar: userInfo.picture, role: "admin" };
+                localStorage.setItem("sia_token", tokenResponse.access_token);
+                localStorage.setItem("sia_user", JSON.stringify(user));
+                window.location.href = "/portal";
+              }
+            },
+            onError: () => {
+              // Fallback: direct Google session
+              const user = { id: userInfo.sub, name: userInfo.name, email: userInfo.email, avatar: userInfo.picture, role: "admin" };
+              localStorage.setItem("sia_token", tokenResponse.access_token);
+              localStorage.setItem("sia_user", JSON.stringify(user));
+              window.location.href = "/portal";
+            },
+          },
+        );
+      } catch (err) {
+        setServerError(err instanceof Error ? err.message : "Google login failed");
+      }
+    },
+    onError: () => {
+      setServerError("Google login was cancelled or failed");
+    },
+  });
 
   const onSubmit = (data: LoginForm) => {
-    login({ email: data.email, password: data.password });
+    setServerError(null);
+    login(
+      { email: data.email, password: data.password },
+      {
+        onSuccess: (result) => {
+          if (!result.success && result.error) {
+            setServerError(result.error.message ?? "Login failed. Please try again.");
+          }
+        },
+        onError: (error) => {
+          setServerError((error as Error)?.message ?? "Login failed. Please try again.");
+        },
+      },
+    );
   };
 
   return (
@@ -45,6 +98,12 @@ export function PortalLoginPage() {
           <CardDescription>Sign in to your account</CardDescription>
         </CardHeader>
         <CardContent>
+          {serverError && (
+            <div className="mb-4 flex items-center gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{serverError}</span>
+            </div>
+          )}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -52,6 +111,7 @@ export function PortalLoginPage() {
                 id="email"
                 type="email"
                 placeholder="you@example.com"
+                aria-invalid={!!errors.email}
                 {...register("email")}
               />
               {errors.email && (
@@ -63,6 +123,7 @@ export function PortalLoginPage() {
               <Input
                 id="password"
                 type="password"
+                aria-invalid={!!errors.password}
                 {...register("password")}
               />
               {errors.password && (
@@ -88,7 +149,7 @@ export function PortalLoginPage() {
               <AnimatedButton
                 variant="outline"
                 className="w-full"
-                onClick={handleGoogleLogin}
+                onClick={() => googleLogin()}
                 type="button"
               >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">

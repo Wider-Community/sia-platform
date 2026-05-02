@@ -1,7 +1,7 @@
 import { Refine, Authenticated } from "@refinedev/core";
 import routerProvider from "@refinedev/react-router";
 import { Outlet, Navigate } from "react-router-dom";
-import { Building2, Users, FileSignature, CheckSquare } from "lucide-react";
+import { Building2, Users, FileSignature, CheckSquare, Settings, Layers, Link2 } from "lucide-react";
 import {
   mockDataProvider,
   mockAuthProvider,
@@ -11,6 +11,7 @@ import {
 import { mujarradDataProvider } from "./providers/mujarrad-data-provider";
 import { authProvider as mujarradAuthProvider } from "./providers/auth-provider";
 import { PortalLayout } from "./layouts/PortalLayout";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
@@ -51,6 +52,21 @@ export function PortalApp() {
           show: "/portal/contacts/:id",
           meta: { label: "Contacts", icon: <Users /> },
         },
+        {
+          name: "engagements",
+          list: "/portal/engagements",
+          create: "/portal/engagements/create",
+          edit: "/portal/engagements/edit/:id",
+          show: "/portal/engagements/:id",
+          meta: { label: "Engagements", icon: <Layers /> },
+        },
+        {
+          name: "matches",
+          list: "/portal/matches",
+          create: "/portal/matches/create",
+          show: "/portal/matches/:id",
+          meta: { label: "Matches", icon: <Link2 /> },
+        },
         { name: "files", meta: { hide: true } },
         { name: "notes", meta: { hide: true } },
         { name: "activity-events", meta: { hide: true } },
@@ -59,6 +75,8 @@ export function PortalApp() {
           name: "tasks",
           list: "/portal/tasks",
           create: "/portal/tasks/create",
+          show: "/portal/tasks/:id",
+          edit: "/portal/tasks/edit/:id",
           meta: { label: "Tasks", icon: <CheckSquare /> },
         },
         { name: "sla-rules", meta: { hide: true } },
@@ -67,6 +85,19 @@ export function PortalApp() {
       options={{
         syncWithLocation: true,
         warnWhenUnsavedChanges: true,
+        reactQuery: {
+          clientConfig: {
+            defaultOptions: {
+              queries: {
+                retry: false,
+                staleTime: 15_000,       // 15s default — navigating back won't re-fetch
+                gcTime: 5 * 60_000,      // keep unused data 5 min before GC
+                refetchOnWindowFocus: false,
+              },
+              mutations: { retry: false },
+            },
+          },
+        },
       }}
     >
       <Outlet />
@@ -80,7 +111,9 @@ export function PortalAuthenticated() {
       key="portal-auth"
       fallback={<Navigate to="/portal/login" />}
     >
-      <PortalLayout />
+      <ErrorBoundary>
+        <PortalLayout />
+      </ErrorBoundary>
     </Authenticated>
   );
 }

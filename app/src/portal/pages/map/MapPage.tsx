@@ -55,7 +55,7 @@ const STAGE_LABELS: Record<string, string> = {
 function getOrgStage(org: Organization & Record<string, unknown>): string {
   return (
     (org.stage as string) ??
-    (org.nodeDetails as Record<string, unknown>)?.stage as string ??
+    ((org.nodeDetails as Record<string, unknown>)?.stage as string) ??
     org.status ??
     "prospect"
   );
@@ -74,15 +74,14 @@ export function MapPage() {
     y: number;
   } | null>(null);
 
-  const orgList = useList<Organization>({
+  const { result: orgsResult, query: orgsQuery } = useList<Organization>({
     resource: "organizations",
     pagination: { pageSize: 500 },
   });
-  const data = orgList.result?.data;
-  const isLoading = orgList.query.isLoading;
+  const isLoading = orgsQuery.isLoading;
 
   const markers = useMemo(() => {
-    if (!data) return [];
+    if (!orgsResult?.data) return [];
     const result: Array<{
       id: string;
       orgId: string;
@@ -94,9 +93,8 @@ export function MapPage() {
       coordinates: [number, number];
       isDefault: boolean;
     }> = [];
-    for (const org of data) {
+    for (const org of orgsResult.data) {
       const locations = (org as unknown as { locations?: OrgLocation[] }).locations;
-      console.log("[MapDebug]", org.name, "locations:", JSON.stringify(locations));
       if (!locations || locations.length === 0) continue;
       const stage = getOrgStage(org as Organization & Record<string, unknown>);
       for (const loc of locations) {
@@ -115,7 +113,7 @@ export function MapPage() {
       }
     }
     return result;
-  }, [data]);
+  }, [orgsResult]);
 
   const filtered = useMemo(() => {
     return markers.filter((m) => {
@@ -210,7 +208,7 @@ export function MapPage() {
                   coordinates={m.coordinates}
                   onClick={() => navigate(`/portal/organizations/${m.orgId}`)}
                   onMouseEnter={(e) => {
-                    const target = e.target as SVGGraphicsElement;
+                    const target = e.target as SVGElement;
                     const ctm = target.getScreenCTM();
                     setTooltip({
                       name: m.name,
@@ -222,7 +220,7 @@ export function MapPage() {
                     });
                   }}
                   onMouseLeave={() => setTooltip(null)}
-                  style={{ default: { cursor: "pointer" }, hover: { cursor: "pointer" }, pressed: { cursor: "pointer" } }}
+                  style={{ cursor: "pointer" }}
                 >
                   <circle
                     r={m.isDefault ? 6 : 4}

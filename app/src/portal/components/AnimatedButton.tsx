@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { Loader2, Check } from "lucide-react";
 import type { VariantProps } from "class-variance-authority";
 
+const MotionButton = motion.create(Button);
+
 interface AnimatedButtonProps
   extends React.ComponentProps<typeof Button>,
     VariantProps<typeof buttonVariants> {
@@ -31,13 +33,10 @@ export function AnimatedButton({
   }, [success]);
 
   return (
-    <motion.div
+    <MotionButton
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
-      style={{ display: "inline-block" }}
-    >
-    <Button
       disabled={disabled || loading}
       className={cn(className)}
       {...props}
@@ -77,7 +76,6 @@ export function AnimatedButton({
           </motion.span>
         )}
       </AnimatePresence>
-    </Button>
-    </motion.div>
+    </MotionButton>
   );
 }

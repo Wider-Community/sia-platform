@@ -14,7 +14,7 @@ export type OrgLocation = z.infer<typeof locationSchema>;
 
 export const organizationSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  type: z.enum(["partner", "investor", "vendor", "client"], { message: "Type is required" }),
+  type: z.enum(["partner", "investor", "vendor", "client", "market_entity"], { message: "Type is required" }),
   status: z.enum(["active", "inactive", "prospect"], { message: "Status is required" }),
   locations: z.array(locationSchema).min(1, "At least one location is required").refine(
     (locs) => locs.filter((l) => l.isDefault).length === 1,
@@ -46,12 +46,14 @@ export const fileRecordSchema = z.object({
   r2ObjectKey: z.string().min(1),
   uploadedBy: z.string().min(1),
   organizationId: z.string().min(1),
+  engagementId: z.string().optional(),
 });
 
 export const noteSchema = z.object({
   content: z.string().min(1, "Note cannot be empty"),
   createdBy: z.string().min(1),
   organizationId: z.string().min(1),
+  engagementId: z.string().optional(),
 });
 
 export const activityEventSchema = z.object({
@@ -90,6 +92,8 @@ export const signingRequestSchema = z.object({
   message: z.string().optional(),
   createdBy: z.string().min(1),
   completedPdfUrl: z.string().optional(),
+  organizationId: z.string().optional(),
+  engagementId: z.string().optional(),
 });
 
 export const signatureFieldSchema = z.object({
@@ -119,6 +123,28 @@ export type SigningRequest = z.infer<typeof signingRequestSchema> & { id: string
 export type SignatureField = z.infer<typeof signatureFieldSchema> & { id: string; createdAt: string };
 export type Signer = z.infer<typeof signerSchema> & { id: string; createdAt: string };
 
+// ── Engagements ──
+
+export const ENGAGEMENT_STAGES = ["prospect", "in_progress", "negotiating", "formalized", "active", "completed", "dormant"] as const;
+export const ENGAGEMENT_CATEGORIES = ["deal", "project", "opportunity", "initiative", "regulatory", "diplomatic"] as const;
+
+export const engagementSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  organizationId: z.string().min(1, "Organization is required"),
+  stage: z.enum(ENGAGEMENT_STAGES),
+  category: z.enum(ENGAGEMENT_CATEGORIES),
+  description: z.string().optional(),
+  priority: z.enum(["low", "medium", "high", "critical"]).default("medium"),
+  assignedTo: z.string().optional(),
+  startDate: z.string().optional(),
+  targetDate: z.string().optional(),
+  value: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  createdBy: z.string().min(1),
+});
+
+export type Engagement = z.infer<typeof engagementSchema> & { id: string; createdAt: string; updatedAt: string };
+
 // ── Tasks ──
 
 export const taskSchema = z.object({
@@ -126,6 +152,8 @@ export const taskSchema = z.object({
   description: z.string().optional(),
   organizationId: z.string().optional(),
   organizationName: z.string().optional(),
+  engagementId: z.string().optional(),
+  engagementName: z.string().optional(),
   dueDate: z.string().min(1, "Due date is required"),
   status: z.enum(["open", "done"]),
   priority: z.enum(["low", "medium", "high"]),
@@ -157,3 +185,24 @@ export const alertSchema = z.object({
 });
 
 export type Alert = z.infer<typeof alertSchema> & { id: string; createdAt: string; updatedAt: string };
+
+// ── Matches ──
+
+export const MATCH_CATEGORIES = ["investment", "partnership", "joint_venture", "technology", "regulatory"] as const;
+export const MATCH_STATUSES = ["pending", "accepted_a", "accepted_b", "mutual", "declined", "expired"] as const;
+
+export const matchSchema = z.object({
+  organizationAId: z.string().min(1, "First organization is required"),
+  organizationBId: z.string().min(1, "Second organization is required"),
+  status: z.enum(MATCH_STATUSES),
+  matchScore: z.number().min(0).max(100),
+  matchReason: z.string().min(1, "Match reason is required"),
+  category: z.enum(MATCH_CATEGORIES),
+  sector: z.string().optional(),
+  suggestedBy: z.string().min(1),
+  declinedBy: z.string().optional(),
+  declineReason: z.string().optional(),
+  expiresAt: z.string().optional(),
+});
+
+export type Match = z.infer<typeof matchSchema> & { id: string; createdAt: string; updatedAt: string };

@@ -19,28 +19,24 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageShell } from "../../components/PageShell";
 import { PageHeader } from "../../components/PageHeader";
+import { taskSchema } from "../../schemas";
 import type { BaseRecord } from "@refinedev/core";
 
-const formSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().optional(),
-  organizationId: z.string().optional(),
-  organizationName: z.string().optional(),
-  dueDate: z.string().min(1, "Due date is required"),
-  status: z.enum(["open", "done"]),
-  priority: z.enum(["low", "medium", "high"]),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof taskSchema>;
 
 export function TaskCreatePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const prefilledOrgId = searchParams.get("organizationId") ?? "";
   const prefilledOrgName = searchParams.get("organizationName") ?? "";
+  const prefilledEngId = searchParams.get("engagementId") ?? "";
+  const prefilledEngName = searchParams.get("engagementName") ?? "";
 
   const orgs = useList({ resource: "organizations", pagination: { mode: "off" } });
   const orgData = orgs.result?.data ?? [];
+
+  const engagements = useList({ resource: "engagements", pagination: { mode: "off" } });
+  const engData = engagements.result?.data ?? [];
 
   const {
     refineCore: { onFinish },
@@ -56,12 +52,14 @@ export function TaskCreatePage() {
       redirect: "list",
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(formSchema) as any,
+    resolver: zodResolver(taskSchema) as any,
     defaultValues: {
       title: "",
       description: "",
       organizationId: prefilledOrgId,
       organizationName: prefilledOrgName,
+      engagementId: prefilledEngId,
+      engagementName: prefilledEngName,
       dueDate: "",
       status: "open",
       priority: "medium",
@@ -70,15 +68,32 @@ export function TaskCreatePage() {
 
   const priorityValue = watch("priority");
   const orgIdValue = watch("organizationId");
+  const engIdValue = watch("engagementId");
+
+  // Filter engagements by selected organization
+  const filteredEngagements = orgIdValue
+    ? engData.filter((e: BaseRecord) => e.organizationId === orgIdValue)
+    : engData;
 
   const handleOrgChange = (orgId: string) => {
     setValue("organizationId", orgId);
     const org = orgData.find((o: BaseRecord) => o.id === orgId);
     setValue("organizationName", (org?.name as string) ?? "");
+    // Clear engagement when org changes
+    setValue("engagementId", "");
+    setValue("engagementName", "");
   };
 
+  const handleEngagementChange = (engId: string) => {
+    setValue("engagementId", engId);
+    const eng = engData.find((e: BaseRecord) => e.id === engId);
+    setValue("engagementName", (eng?.title as string) ?? "");
+  };
+
+  const isLoadingDeps = orgs.query.isLoading || engagements.query.isLoading;
+
   return (
-    <PageShell>
+    <PageShell loading={isLoadingDeps}>
       <div className="mx-auto max-w-2xl space-y-6">
       <PageHeader title="New Task" backTo="/portal/tasks" />
 
@@ -112,6 +127,23 @@ export function TaskCreatePage() {
                   {orgData.map((org: BaseRecord) => (
                     <SelectItem key={org.id as string} value={org.id as string}>
                       {org.name as string}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Engagement</Label>
+              <Select value={engIdValue || "none"} onValueChange={(v) => handleEngagementChange(v === "none" ? "" : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select engagement (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {filteredEngagements.map((eng: BaseRecord) => (
+                    <SelectItem key={eng.id as string} value={eng.id as string}>
+                      {eng.title as string}
                     </SelectItem>
                   ))}
                 </SelectContent>

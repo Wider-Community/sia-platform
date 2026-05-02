@@ -9,9 +9,22 @@ import { AnimatedTabContent } from "../../components/AnimatedTabContent";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "../../components/EmptyState";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Building2,
   CheckCircle2,
   Clock,
   Download,
+  Layers,
   Link as LinkIcon,
   RefreshCw,
   Send,
@@ -28,6 +41,14 @@ import {
 } from "../../components/SignatureFieldOverlay";
 import { assemblePdf, type FieldPlacement } from "../../lib/pdf-assembly";
 import { useState, useCallback } from "react";
+
+const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
+  draft: "outline",
+  sent: "secondary",
+  partially_signed: "secondary",
+  completed: "default",
+  cancelled: "destructive",
+};
 
 const statusLabel: Record<string, string> = {
   draft: "Draft",
@@ -55,7 +76,21 @@ export function SigningDetailPage() {
   });
   const req = reqQuery.data?.data;
 
-  const signersResult = useList({
+  const { query: orgQuery } = useOne({
+    resource: "organizations",
+    id: (req?.organizationId as string) ?? "",
+    queryOptions: { enabled: !!req?.organizationId },
+  });
+  const orgName = (orgQuery.data?.data?.name as string) ?? "";
+
+  const { query: engQuery } = useOne({
+    resource: "engagements",
+    id: (req?.engagementId as string) ?? "",
+    queryOptions: { enabled: !!req?.engagementId },
+  });
+  const engTitle = (engQuery.data?.data?.title as string) ?? "";
+
+  const { result: signersData, query: signersQuery } = useList({
     resource: "signers",
     filters: [
       { field: "signingRequestId", operator: "eq", value: id },
@@ -63,7 +98,7 @@ export function SigningDetailPage() {
     pagination: { mode: "off" },
   });
 
-  const fieldsResult = useList({
+  const { result: fieldsData, query: fieldsQuery } = useList({
     resource: "signature-fields",
     filters: [
       { field: "signingRequestId", operator: "eq", value: id },
@@ -73,6 +108,11 @@ export function SigningDetailPage() {
 
   const { mutate: updateRequest } = useUpdate();
   const { mutate: updateSigner } = useUpdate();
+
+  const signersList = (signersData?.data ?? []) as BaseRecord[];
+  const fieldsList = (fieldsData?.data ?? []) as BaseRecord[];
+
+  const appUrl = import.meta.env.VITE_APP_URL ?? window.location.origin;
 
   const handleResend = async (signer: BaseRecord) => {
     const newToken = crypto.randomUUID();
@@ -88,11 +128,6 @@ export function SigningDetailPage() {
       },
     });
   };
-
-  const signersList = (signersResult.result?.data ?? []) as BaseRecord[];
-  const fieldsList = (fieldsResult.result?.data ?? []) as BaseRecord[];
-
-  const appUrl = import.meta.env.VITE_APP_URL ?? window.location.origin;
 
   const fieldRects: FieldRect[] = fieldsList.map((f) => {
     const signer = signersList.find((s) => s.id === f.signerId);
@@ -147,7 +182,7 @@ export function SigningDetailPage() {
       const response = await fetch(req.pdfUrl as string);
       const pdfBytes = new Uint8Array(await response.arrayBuffer());
       const signedPdf = await assemblePdf(pdfBytes, signedFields);
-      const blob = new Blob([signedPdf as BlobPart], { type: "application/pdf" });
+      const blob = new Blob([signedPdf], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -160,7 +195,7 @@ export function SigningDetailPage() {
   }, [req, fieldsList]);
 
   if (reqQuery.isLoading) {
-    return <PageShell loading>{null}</PageShell>;
+    return <PageShell loading />;
   }
 
   if (!req) {
@@ -192,13 +227,59 @@ export function SigningDetailPage() {
               Download PDF
             </Button>
             {(status === "sent" || status === "partially_signed") && (
-              <AnimatedButton variant="destructive" onClick={handleCancel}>
-                Cancel Request
-              </AnimatedButton>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <AnimatedButton variant="destructive">
+                    Cancel Request
+                  </AnimatedButton>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Cancel signing request?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will cancel the signing request. All pending signers will no longer be able to sign. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Keep Request</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleCancel}>
+                      Cancel Request
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
         }
       />
+
+      {(req.organizationId || req.engagementId) && (
+        <div className="flex items-center gap-4 text-sm">
+          {req.organizationId && (
+            <Button
+              variant="link"
+              className="h-auto p-0"
+              onClick={() => navigate(`/portal/organizations/${req.organizationId}`)}
+            >
+              <Building2 className="mr-1 h-3 w-3" />
+              {orgName || (req.organizationId as string)}
+            </Button>
+          )}
+          {req.engagementId && (
+            <>
+              <span className="text-muted-foreground">/</span>
+              <Button
+                variant="link"
+                className="h-auto p-0"
+                onClick={() => navigate(`/portal/engagements/${req.engagementId}`)}
+              >
+                <Layers className="mr-1 h-3 w-3" />
+                {engTitle || (req.engagementId as string)}
+              </Button>
+            </>
+          )}
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
@@ -212,7 +293,7 @@ export function SigningDetailPage() {
               <CardTitle>Signer Progress</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {signersResult.query.isLoading ? (
+              {signersQuery.isLoading ? (
                 <Skeleton className="h-32 w-full" />
               ) : signersList.length > 0 ? (
                 signersList.map((signer) => {
@@ -301,8 +382,8 @@ export function SigningDetailPage() {
                 size="sm"
                 onClick={() => {
                   reqQuery.refetch();
-                  signersResult.query.refetch();
-                  fieldsResult.query.refetch();
+                  signersQuery.refetch();
+                  fieldsQuery.refetch();
                 }}
               >
                 <RefreshCw className="mr-2 h-4 w-4" />

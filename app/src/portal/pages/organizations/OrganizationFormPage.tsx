@@ -1,11 +1,9 @@
 import { useForm } from "@refinedev/react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, useParams } from "react-router-dom";
-import { useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { AnimatedButton } from "../../components/AnimatedButton";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AnimatedInput } from "../../components/AnimatedInput";
 import { AnimatedTextarea } from "../../components/AnimatedTextarea";
@@ -22,37 +20,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2 } from "lucide-react";
 import { PageShell } from "../../components/PageShell";
 import { PageHeader } from "../../components/PageHeader";
 import { LocationEditor } from "../../components/LocationEditor";
+import { organizationSchema } from "../../schemas";
 
-const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  type: z.enum(["partner", "investor", "vendor", "client"]),
-  status: z.enum(["active", "inactive", "prospect"]),
-  locations: z.array(z.object({
-    id: z.string(),
-    country: z.string().min(1),
-    countryName: z.string().min(1),
-    city: z.string().min(1),
-    lat: z.number(),
-    lng: z.number(),
-    isDefault: z.boolean(),
-  })).min(1, "At least one location is required"),
-  website: z.string().url("Invalid URL").optional().or(z.literal("")),
-  description: z.string().optional(),
-  contacts: z.array(z.object({
-    firstName: z.string().min(1, "Required"),
-    lastName: z.string().min(1, "Required"),
-    email: z.string().email("Invalid email").optional().or(z.literal("")),
-    phone: z.string().optional(),
-    role: z.string().optional(),
-  })).optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof organizationSchema>;
 
 export function OrganizationFormPage() {
   const navigate = useNavigate();
@@ -75,7 +48,7 @@ export function OrganizationFormPage() {
       redirect: "list",
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(formSchema) as any,
+    resolver: zodResolver(organizationSchema) as any,
     defaultValues: {
       name: "",
       type: "partner",
@@ -83,13 +56,7 @@ export function OrganizationFormPage() {
       locations: [{ id: crypto.randomUUID(), country: "", countryName: "", city: "", lat: 0, lng: 0, isDefault: true }],
       website: "",
       description: "",
-      contacts: [],
     },
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "contacts",
   });
 
   const typeValue = watch("type");
@@ -125,6 +92,7 @@ export function OrganizationFormPage() {
                     <SelectItem value="investor">Investor</SelectItem>
                     <SelectItem value="vendor">Vendor</SelectItem>
                     <SelectItem value="client">Client</SelectItem>
+                    <SelectItem value="market_entity">Market Entity</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -164,73 +132,6 @@ export function OrganizationFormPage() {
               <Label htmlFor="description">Description</Label>
               <AnimatedTextarea id="description" rows={3} {...register("description")} />
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Contacts sub-form */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Contacts</CardTitle>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => append({ firstName: "", lastName: "", email: "", phone: "", role: "" })}
-            >
-              <Plus className="mr-2 h-4 w-4" /> Add Contact
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {fields.length === 0 && (
-              <p className="text-sm text-muted-foreground">No contacts yet.</p>
-            )}
-            {fields.map((field, idx) => (
-              <div key={field.id}>
-                {idx > 0 && <Separator className="my-4" />}
-                {(() => {
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  const contactErrors = (errors.contacts as any)?.[idx] as Record<string, { message?: string }> | undefined;
-                  return (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <Label>First Name *</Label>
-                    <Input {...register(`contacts.${idx}.firstName`)} />
-                    {contactErrors?.firstName && (
-                      <p className="text-xs text-destructive">{String(contactErrors.firstName.message ?? "")}</p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Last Name *</Label>
-                    <Input {...register(`contacts.${idx}.lastName`)} />
-                    {contactErrors?.lastName && (
-                      <p className="text-xs text-destructive">{String(contactErrors.lastName.message ?? "")}</p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Email</Label>
-                    <Input type="email" {...register(`contacts.${idx}.email`)} />
-                    {contactErrors?.email && (
-                      <p className="text-xs text-destructive">{String(contactErrors.email.message ?? "")}</p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Phone</Label>
-                    <Input {...register(`contacts.${idx}.phone`)} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Role</Label>
-                    <Input {...register(`contacts.${idx}.role`)} />
-                  </div>
-                  <div className="flex items-end">
-                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(idx)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-                  );
-                })()}
-              </div>
-            ))}
           </CardContent>
         </Card>
 

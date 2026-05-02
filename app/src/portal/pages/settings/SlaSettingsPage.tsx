@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -19,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pencil, Check, X } from "lucide-react";
+import { Pencil, Check, X, Plus } from "lucide-react";
 import { PageShell } from "../../components/PageShell";
 import { PageHeader } from "../../components/PageHeader";
 import type { BaseRecord } from "@refinedev/core";
@@ -41,6 +42,8 @@ export function SlaSettingsPage() {
   const { mutate: updateRule } = useUpdate();
   const { mutate: createRule } = useCreate();
   const [editing, setEditing] = useState<EditingRule | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [newRule, setNewRule] = useState({ name: "", entityType: "organization", thresholdDays: 7, description: "" });
   const [seeded, setSeeded] = useState(false);
 
   const rules = result?.data ?? [];
@@ -83,13 +86,26 @@ export function SlaSettingsPage() {
     setEditing(null);
   };
 
+  const saveNewRule = () => {
+    if (!newRule.name.trim()) return;
+    createRule({ resource: "sla-rules", values: { ...newRule } });
+    setNewRule({ name: "", entityType: "organization", thresholdDays: 7, description: "" });
+    setAdding(false);
+  };
+
   return (
     <PageShell>
-      <PageHeader title="SLA Settings" />
+      <PageHeader title="SLA Settings" backTo="/portal" />
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Service Level Agreement Rules</CardTitle>
+          {!adding && (
+            <Button size="sm" onClick={() => { setAdding(true); setEditing(null); }}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Rule
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {query.isLoading ? (
@@ -179,7 +195,61 @@ export function SlaSettingsPage() {
                     </TableRow>
                   );
                 })}
-                {rules.length === 0 && (
+                {adding && (
+                  <TableRow>
+                    <TableCell>
+                      <Input
+                        value={newRule.name}
+                        onChange={(e) => setNewRule({ ...newRule, name: e.target.value })}
+                        placeholder="Rule name"
+                        className="h-8"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={newRule.entityType}
+                        onValueChange={(v) => setNewRule({ ...newRule, entityType: v })}
+                      >
+                        <SelectTrigger className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="organization">Organization</SelectItem>
+                          <SelectItem value="signing-request">Signing Request</SelectItem>
+                          <SelectItem value="task">Task</SelectItem>
+                          <SelectItem value="engagement">Engagement</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={newRule.thresholdDays}
+                        onChange={(e) => setNewRule({ ...newRule, thresholdDays: Number(e.target.value) })}
+                        className="h-8 w-20"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={newRule.description}
+                        onChange={(e) => setNewRule({ ...newRule, description: e.target.value })}
+                        placeholder="Description"
+                        className="h-8"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={saveNewRule}>
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setAdding(false)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+                {rules.length === 0 && !adding && (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                       No SLA rules configured. Default rules are being created...
